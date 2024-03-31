@@ -311,7 +311,7 @@ namespace Sels.Core.Mediator.Test.Components
 
             // Assert
             Assert.That(result, Is.EqualTo(priorities.Length));
-            CollectionAssert.AreEqual(expected, results);
+            Assert.That(results, Is.EqualTo(expected).AsCollection);
         }
 
         [TestCase(1)]

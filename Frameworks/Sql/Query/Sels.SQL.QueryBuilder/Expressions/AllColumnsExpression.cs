@@ -12,13 +12,13 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
         /// <summary>
         /// Object containing the dataset to select everything from.
         /// </summary>
-        public object DataSet { get; }
+        public object Set { get; }
 
         /// <inheritdoc cref="AllColumnsExpression"/>
-        /// <param name="dataset"><inheritdoc cref="DataSet"/></param>
+        /// <param name="dataset"><inheritdoc cref="Set"/></param>
         public AllColumnsExpression(object dataset = null)
         {
-            DataSet = dataset;
+            Set = dataset;
         }
 
         /// <inheritdoc/>
@@ -33,7 +33,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
             builder.ValidateArgument(nameof(builder));
             datasetConverterer.ValidateArgument(nameof(datasetConverterer));
 
-            var dataset = DataSet != null ? datasetConverterer(DataSet) : null;
+            var dataset = Set != null ? datasetConverterer(Set) : null;
 
             if (dataset.HasValue()) builder.Append(dataset).Append('.');
             builder.Append(Sql.All);

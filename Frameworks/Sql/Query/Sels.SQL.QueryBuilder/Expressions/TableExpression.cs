@@ -12,8 +12,10 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
     public class TableExpression : BaseExpressionContainer
     {
         // Properties
-        /// <inheritdoc cref="IDataSetExpression.DataSet"/>
-        public DataSetExpression DataSet { get; private set; }
+        /// <summary>
+        /// Optional alias that can be added to reference the table.
+        /// </summary>
+        public DataSetExpression Alias { get; private set; }
         /// <summary>
         /// Contains the database where the table is located in.
         /// </summary>
@@ -28,7 +30,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
         public ObjectExpression Table { get; private set; }
 
         /// <inheritdoc cref="TableExpression"/>
-        /// <param name="dataset"><inheritdoc cref="IDataSetExpression.DataSet"/></param>
+        /// <param name="dataset"><inheritdoc cref="IDataSetExpression.Set"/></param>
         /// <param name="database"><inheritdoc cref="Database"/></param>
         /// <param name="schema"><inheritdoc cref="Schema"/></param>
         /// <param name="table"><inheritdoc cref="Table"/></param>
@@ -58,7 +60,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
         /// <returns>Current expression for method chaining</returns>
         public TableExpression SetAlias(object alias)
         {
-            DataSet = alias != null ? new DataSetExpression(alias) : null;
+            Alias = alias != null ? new DataSetExpression(alias) : null;
             return this;
         }
 
@@ -104,10 +106,10 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
 
             subBuilder(builder, Table);
 
-            if(DataSet != null)
+            if(Alias != null)
             {
                 builder.AppendSpace();
-                subBuilder(builder, DataSet);
+                subBuilder(builder, Alias);
             }
         }
     }

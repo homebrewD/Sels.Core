@@ -16,7 +16,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
         private readonly bool _canSeparatorBeAppended;
 
         /// <inheritdoc cref="SubQueryExpression"/>
-        /// <param name="dataset"><inheritdoc cref="IDataSetExpression.DataSet"/></param>
+        /// <param name="dataset"><inheritdoc cref="IDataSetExpression.Set"/></param>
         /// <param name="subQueryBuilder">Delegate that adds the query to the supplied builder</param>
         /// <param name="wrap">If the query needs to be wrapped with ()</param>
         /// <param name="canSeparatorBeAppended">If separator can be appended to the sub query. In most cases it is not allowed</param>
@@ -27,7 +27,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
             _canSeparatorBeAppended = canSeparatorBeAppended;
         }
         /// <inheritdoc cref="SubQueryExpression"/>
-        /// <param name="dataset"><inheritdoc cref="IDataSetExpression.DataSet"/></param>
+        /// <param name="dataset"><inheritdoc cref="IDataSetExpression.Set"/></param>
         /// <param name="queryBuilder">Builder that creates the query string</param>
         /// <param name="wrap">If the query needs to be wrapped with ()</param>
         /// <param name="canSeparatorBeAppended">If separator can be appended to the sub query. In most cases it is not allowed</param>
@@ -42,7 +42,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
             builder.ValidateArgument(nameof(builder));
             datasetConverterer.ValidateArgument(nameof(datasetConverterer));
 
-            var dataset = DataSet != null ? datasetConverterer(DataSet) : null;
+            var dataset = Set != null ? datasetConverterer(Set) : null;
 
             if (_wrap) builder.Append('(');
             if (!_canSeparatorBeAppended) options &= ~ExpressionCompileOptions.AppendSeparator;

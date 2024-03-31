@@ -431,11 +431,11 @@ namespace Sels.DistributedLocking.SQL.Templates
                     tableExpression.SetSchema(Schema);
 
                     // Overwrite table names
-                    if (tableExpression?.DataSet?.DataSet is Type sqlLockType && sqlLockType.Is<SqlLock>())
+                    if (tableExpression?.Alias?.Set is Type sqlLockType && sqlLockType.Is<SqlLock>())
                     {
                         tableExpression.SetTableName(SqlLockTableName);
                     }
-                    else if (tableExpression?.DataSet?.DataSet is Type sqlLockRequestType && sqlLockRequestType.Is<SqlLockRequest>())
+                    else if (tableExpression?.Alias?.Set is Type sqlLockRequestType && sqlLockRequestType.Is<SqlLockRequest>())
                     {
                         tableExpression.SetTableName(SqlLockRequestTableName);
                     }

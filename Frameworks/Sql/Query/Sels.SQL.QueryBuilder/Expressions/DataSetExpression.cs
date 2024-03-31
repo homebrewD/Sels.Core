@@ -10,7 +10,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
     public class DataSetExpression : BaseDataSetExpression
     {
         /// <inheritdoc cref="DataSetExpression"/>
-        /// <param name="dataset"><inheritdoc cref="IDataSetExpression.DataSet"/></param>
+        /// <param name="dataset"><inheritdoc cref="IDataSetExpression.Set"/></param>
         public DataSetExpression(object dataset) : base(dataset)
         {
         }
@@ -21,7 +21,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
             builder.ValidateArgument(nameof(builder));
             datasetConverterer.ValidateArgument(nameof(datasetConverterer));
 
-            var dataSet = DataSet != null ? datasetConverterer(DataSet) : null;
+            var dataSet = Set != null ? datasetConverterer(Set) : null;
 
             if (dataSet != null) builder.Append(dataSet);
         }

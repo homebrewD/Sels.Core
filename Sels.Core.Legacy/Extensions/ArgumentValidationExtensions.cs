@@ -58,7 +58,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static T ValidateArgument<T>(this T argument, string parameterName)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => x != null, x => throw new ArgumentNullException(parameterName));
         }
@@ -72,7 +72,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static string ValidateArgumentNotNullOrEmpty(this string argument, string parameterName)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => !string.IsNullOrEmpty(x), $"{parameterName} cannot be null or empty");
         }
@@ -85,7 +85,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static string ValidateArgumentNotNullOrWhitespace(this string argument, string parameterName)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => !string.IsNullOrWhiteSpace(x), $"{parameterName} cannot be null, empty or whitespace");
         }
@@ -101,8 +101,8 @@ namespace Sels.Core.Extensions
         /// <exception cref="ArgumentException"></exception>
         public static string ValidateArgumentEndsWith(this string argument, string parameterName, string comparator, StringComparison option = StringComparison.OrdinalIgnoreCase)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
-            if (string.IsNullOrWhiteSpace(comparator)) throw new ArgumentException($"{nameof(comparator)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
+            if (string.IsNullOrWhiteSpace(comparator)) throw new ArgumentException($"{nameof(comparator)} cannot be null, empty or whitespace", nameof(comparator));
 
             return argument.ValidateArgument(x => x != null && x.EndsWith(comparator, option), $"{parameterName} must end with {comparator}");
         }
@@ -118,8 +118,8 @@ namespace Sels.Core.Extensions
         /// <exception cref="ArgumentException"></exception>
         public static string ValidateArgumentDoesNotEndWith(this string argument, string parameterName, string comparator, StringComparison option = StringComparison.OrdinalIgnoreCase)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
-            if (string.IsNullOrWhiteSpace(comparator)) throw new ArgumentException($"{nameof(comparator)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
+            if (string.IsNullOrWhiteSpace(comparator)) throw new ArgumentException($"{nameof(comparator)} cannot be null, empty or whitespace", nameof(comparator));
 
             return argument.ValidateArgument(x => x != null && !x.EndsWith(comparator, option), $"{parameterName} can't end with {comparator}");
         }
@@ -135,8 +135,8 @@ namespace Sels.Core.Extensions
         /// <exception cref="ArgumentException"></exception>
         public static string ValidateArgumentStartsWith(this string argument, string parameterName, string comparator, StringComparison option = StringComparison.OrdinalIgnoreCase)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
-            if (string.IsNullOrWhiteSpace(comparator)) throw new ArgumentException($"{nameof(comparator)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
+            if (string.IsNullOrWhiteSpace(comparator)) throw new ArgumentException($"{nameof(comparator)} cannot be null, empty or whitespace", nameof(comparator));
 
             return argument.ValidateArgument(x => x != null && x.StartsWith(comparator, option), $"{parameterName} must start with {comparator}");
         }
@@ -152,8 +152,8 @@ namespace Sels.Core.Extensions
         /// <exception cref="ArgumentException"></exception>
         public static string ValidateArgumentDoesNotStartWith(this string argument, string parameterName, string comparator, StringComparison option = StringComparison.OrdinalIgnoreCase)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
-            if (string.IsNullOrWhiteSpace(comparator)) throw new ArgumentException($"{nameof(comparator)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
+            if (string.IsNullOrWhiteSpace(comparator)) throw new ArgumentException($"{nameof(comparator)} cannot be null, empty or whitespace", nameof(comparator));
 
             return argument.ValidateArgument(x => x != null && !x.StartsWith(comparator, option), $"{parameterName} can't start with {comparator}");
         }
@@ -171,7 +171,7 @@ namespace Sels.Core.Extensions
         public static T ValidateArgumentLarger<T>(this T argument, string parameterName, T comparator)
             where T : IComparable
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => argument.CompareTo(comparator) > 0, $"{parameterName} must be larger than <{comparator}>. Was <{argument}>");
         }
@@ -187,7 +187,7 @@ namespace Sels.Core.Extensions
         public static T ValidateArgumentLargerOrEqual<T>(this T argument, string parameterName, T comparator)
             where T : IComparable
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => argument.CompareTo(comparator) >= 0, $"{parameterName} must be larger or equal to <{comparator}>. Was <{argument}>");
         }
@@ -203,7 +203,7 @@ namespace Sels.Core.Extensions
         public static T ValidateArgumentSmaller<T>(this T argument, string parameterName, T comparator)
             where T : IComparable
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => argument.CompareTo(comparator) < 0, $"{parameterName} must be larger or equal to <{comparator}>. Was <{argument}>");
         }
@@ -219,7 +219,7 @@ namespace Sels.Core.Extensions
         public static T ValidateArgumentSmallerOrEqual<T>(this T argument, string parameterName, T comparator)
             where T : IComparable
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => argument.CompareTo(comparator) <= 0, $"{parameterName} must be larger or equal to <{comparator}>. Was <{argument}>");
         }
@@ -236,7 +236,7 @@ namespace Sels.Core.Extensions
         public static T ValidateArgumentInRange<T>(this T argument, string parameterName, T startRange, T endRange)
             where T : IComparable
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => argument.CompareTo(startRange) >= 0 && argument.CompareTo(endRange) <= 0, $"{parameterName} must be in range of <{startRange}> and <{endRange}>. Was <{argument}>");
         }
@@ -253,7 +253,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static T ValidateArgumentNotNullOrEmpty<T, TItem>(this T argument, string parameterName) where T : IEnumerable<TItem>
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => x.HasValue(), $"{parameterName} cannot be null and must contain at least 1 item");
         }
@@ -267,7 +267,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static IEnumerable<T> ValidateArgumentNotNullOrEmpty<T>(this IEnumerable<T> argument, string parameterName)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => x.HasValue(), $"{parameterName} cannot be null and must contain at least 1 item");
         }
@@ -281,7 +281,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static T[] ValidateArgumentNotNullOrEmpty<T>(this T[] argument, string parameterName)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => x.HasValue(), $"{parameterName} cannot be null and must contain at least 1 item");
         }
@@ -298,7 +298,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static T ValidateArgumentAssignableFrom<T>(this T argument, string parameterName, Type assignableType)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
             if (assignableType == null) throw new ArgumentException($"{nameof(assignableType)} cannot be null");
 
             return argument.ValidateArgument(x => argument != null && argument.GetType().IsAssignableFrom(assignableType), $"{parameterName} cannot be null && must be assignable from Type <{assignableType}>");
@@ -314,7 +314,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static T ValidateArgumentAssignableTo<T>(this T argument, string parameterName, Type assignableType)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
             if (assignableType == null) throw new ArgumentException($"{nameof(assignableType)} cannot be null");
 
             return argument.ValidateArgument(x => argument != null && assignableType.IsAssignableFrom(argument.GetType()), $"{parameterName} cannot be null && Type <{assignableType}> must be assignable from type <{argument.GetType()}>");
@@ -329,7 +329,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static Type ValidateArgumentAssignableFrom(this Type argument, string parameterName, Type assignableType)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
             if (assignableType == null) throw new ArgumentException($"{nameof(assignableType)} cannot be null");
 
             return argument.ValidateArgument(x => argument != null && argument.IsAssignableFrom(assignableType), $"{parameterName} cannot be null && <{argument}> must be assignable from Type <{assignableType}>");
@@ -344,7 +344,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static Type ValidateArgumentAssignableTo(this Type argument, string parameterName, Type assignableType)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
             if (assignableType == null) throw new ArgumentException($"{nameof(assignableType)} cannot be null");
 
             return argument.ValidateArgument(x => argument != null && assignableType.IsAssignableFrom(argument), $"{parameterName} cannot be null && Type <{assignableType}> must be assignable from the type of {argument}");
@@ -357,7 +357,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static Type ValidateArgumentNotInterface(this Type argument, string parameterName)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => argument != null && !argument.IsInterface, $"{parameterName} cannot be null and can't be an interface");
         }
@@ -370,7 +370,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static Type ValidateArgumentInstanceable(this Type argument, string parameterName)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => argument != null && !argument.IsInterface && !argument.IsAbstract, $"{parameterName} cannot be null, can't be an interface or abstract class");
         }
@@ -384,7 +384,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static Type ValidateArgumentCanBeContructedWith(this Type argument, string parameterName, params Type[] parameterTypes)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => argument != null && argument.CanConstructWith(parameterTypes), $"{parameterName} cannot be null && must contain {(parameterTypes.HasValue() ? "a constructor that has the following parameters: " + parameterTypes.JoinString(", ") : "a no-arg constructor")}");
         }
@@ -398,7 +398,7 @@ namespace Sels.Core.Extensions
         /// <returns><paramref name="argument"/></returns>
         public static Type ValidateArgumentCanBeContructedWithArguments(this Type argument, string parameterName, params object[] arguments)
         {
-            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace");
+            if (string.IsNullOrWhiteSpace(parameterName)) throw new ArgumentException($"{nameof(parameterName)} cannot be null, empty or whitespace", nameof(parameterName));
 
             return argument.ValidateArgument(x => argument != null && argument.CanConstructWithArguments(arguments), $"{parameterName} cannot be null && must contain {(arguments.HasValue() ? "a constructor that has the following parameters: " + arguments.Select(x => x.GetTypeOrDefault()).JoinString(", ") : "a no-arg constructor")}");
         }

@@ -10,13 +10,13 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
     public abstract class BaseDataSetExpression : BaseExpression, IDataSetExpression
     {
         /// <inheritdoc/>
-        public object DataSet { get; }
+        public object Set { get; }
 
         ///<inheritdoc cref="BaseDataSetExpression"/>
-        /// <param name="dataset"><inheritdoc cref="DataSet"/></param>
+        /// <param name="dataset"><inheritdoc cref="Set"/></param>
         public BaseDataSetExpression(object dataset)
         {
-            DataSet = dataset;
+            Set = dataset;
         }
         /// <inheritdoc/>
         public override void ToSql(StringBuilder builder, ExpressionCompileOptions options = ExpressionCompileOptions.None)

@@ -217,7 +217,7 @@ namespace Sels.DistributedLocking.Memory.Test
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            CollectionAssert.AreEqual(expected, result.Results.Select(x => x.Resource));
+            Assert.That(result.Results.Select(x => x.Resource), Is.EqualTo(expected).AsCollection);
         }
 
         [TestCase(new string[] { "1", "2", "3", "4", "5" }, new string[] { "1","2","3","4", "5" } , false)]
@@ -237,7 +237,7 @@ namespace Sels.DistributedLocking.Memory.Test
 
             // Assert
             Assert.That(results, Is.Not.Null);
-            CollectionAssert.AreEqual(expected, results.Results.Select(x => x.Resource));
+            Assert.That(results.Results.Select(x => x.Resource), Is.EqualTo(expected).AsCollection);
         }
 
         [TestCase(new string?[] { "1", "2", "3", "4", "5", null }, new string?[] { null, "1", "2", "3", "4", "5" }, false)]
@@ -267,7 +267,7 @@ namespace Sels.DistributedLocking.Memory.Test
 
             // Assert
             Assert.That(results, Is.Not.Null);
-            CollectionAssert.AreEqual(expected, results.Results.Select(x => x.LockedBy));
+            Assert.That(results.Results.Select(x => x.LockedBy), Is.EqualTo(expected).AsCollection);
         }
         [Test, Timeout(60000)]
         public async Task CorrectSortingIsAppliedWhenSortingOnLastLockDate()
@@ -289,7 +289,7 @@ namespace Sels.DistributedLocking.Memory.Test
 
             // Assert
             Assert.That(results, Is.Not.Null);
-            CollectionAssert.AreEqual(Enumerable.Range(0, 100).Select(x => x.ToString()), results.Results.Select(x => x.Resource));
+            Assert.That(results.Results.Select(x => x.Resource), Is.EqualTo(Enumerable.Range(0, 100).Select(x => x.ToString())).AsCollection);
         }
         [Test, Timeout(60000)]
         public async Task CorrectSortingIsAppliedWhenSortingOnLockDate()
@@ -308,7 +308,7 @@ namespace Sels.DistributedLocking.Memory.Test
 
             // Assert
             Assert.That(results, Is.Not.Null);
-            CollectionAssert.AreEqual(Enumerable.Range(0, 100).Select(x => x.ToString()), results.Results.Select(x => x.Resource));
+            Assert.That(results.Results.Select(x => x.Resource), Is.EqualTo(Enumerable.Range(0, 100).Select(x => x.ToString())).AsCollection);
         }
         [Test, Timeout(60000)]
         public async Task CorrectSortingIsAppliedWhenSortingOnExpiryDate()
@@ -328,7 +328,7 @@ namespace Sels.DistributedLocking.Memory.Test
 
             // Assert
             Assert.That(results, Is.Not.Null);
-            CollectionAssert.AreEqual(Enumerable.Range(0, 100).Select(x => x.ToString()), results.Results.Select(x => x.Resource));
+            Assert.That(results.Results.Select(x => x.Resource), Is.EqualTo(Enumerable.Range(0, 100).Select(x => x.ToString())).AsCollection);
         }
     }
 }

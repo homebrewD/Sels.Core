@@ -10,9 +10,9 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
     {
         // Properties
         /// <summary>
-        /// Object containing a dataset alias.
+        /// Object containing a dataset name.
         /// </summary>
-        public object DataSet { get; }
+        public object Set { get; }
 
         /// <summary>
         /// Converts the current expression to sql.

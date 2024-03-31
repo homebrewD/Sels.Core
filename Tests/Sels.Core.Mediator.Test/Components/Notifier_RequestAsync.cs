@@ -142,7 +142,7 @@ namespace Sels.Core.Mediator.Test.Components
 
             // Assert
             Assert.That(result.Completed, Is.False);
-            CollectionAssert.AreEqual(expected, results);
+            Assert.That(results, Is.EqualTo(expected).AsCollection);
         }
 
         [Test]

@@ -13,7 +13,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
         public string Object { get; }
 
         /// <inheritdoc cref="BaseObjectExpression"/>
-        /// <param name="dataset"><inheritdoc cref="IDataSetExpression.DataSet"/></param>
+        /// <param name="dataset"><inheritdoc cref="IDataSetExpression.Set"/></param>
         /// <param name="objectName"><inheritdoc cref="Object"/></param>
         public BaseObjectExpression(object dataset, string objectName) : base(dataset)
         {

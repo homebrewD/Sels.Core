@@ -383,7 +383,7 @@ namespace Sels.SQL.QueryBuilder.MySQL
                         if(expressions.Any(x => x is IObjectExpression || x is TableExpression))
                         {
                             var aliases = expressions.Where(x => x is IObjectExpression || x is TableExpression)
-                                                        .Select(x => ConvertDataSet(x is TableExpression tableExpression ? tableExpression.DataSet?.DataSet : x.CastTo<IObjectExpression>().DataSet, compilerOptions))
+                                                        .Select(x => ConvertDataSet(x is TableExpression tableExpression ? tableExpression.Alias?.Set : x.CastTo<IObjectExpression>().Set, compilerOptions))
                                                         .Where(x => x != null).ToArray();
 
                             if (aliases.HasValue())
@@ -603,7 +603,7 @@ namespace Sels.SQL.QueryBuilder.MySQL
                 if (expression is IColumnExpression columnExpression && !columnExpression.Object.Equals(Sql.All.ToString()))
                 {
                     // Add back ticks around column names 
-                    columnExpression.ToSql(builder, x => ConvertDataSet(x, compilerOptions, isInsert), x => $"`{x}`", true, options);
+                    columnExpression.ToSql(builder, x => ConvertDataSet(x, compilerOptions, isInsert), x => $"`{x}`", options);
                 }
                 else if (expression is IObjectExpression objectExpression && !objectExpression.Object.Equals(Sql.All.ToString()))
                 {
