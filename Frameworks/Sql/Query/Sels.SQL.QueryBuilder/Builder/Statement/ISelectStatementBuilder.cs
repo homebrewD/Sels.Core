@@ -393,39 +393,39 @@ namespace Sels.SQL.QueryBuilder.Builder.Statement
         /// <param name="dataset">Optional dataset alias to select column from</param>
         /// <param name="column">The column to count</param>
         /// <returns>Builder for configuring the selected value</returns>
-        ISelectStatementAggregatedValueBuilder<TEntity, TDerived> Count(object dataset, string column = null) => AggregatedColumnExpression(new ColumnFunctionExpression(Functions.Count, new ColumnExpression(dataset, column.ValidateArgumentNotNullOrWhitespace(nameof(column)))));
+        ISelectStatementAggregatedValueBuilder<TEntity, TDerived> Count(object dataset, string column) => AggregatedColumnExpression(new ColumnFunctionExpression(Functions.Count, new ColumnExpression(dataset, column.ValidateArgumentNotNullOrWhitespace(nameof(column)))));
         /// <summary>
         /// Counts the total amount of rows where column selected by <paramref name="property"/> from <typeparamref name="T"/> is not null.
         /// </summary>
         /// <param name="dataset">Optional dataset alias to select column from</param>
         /// <param name="property">The expression that points to the property to use</param>
         /// <returns>Builder for configuring the selected value</returns>
-        ISelectStatementAggregatedValueBuilder<TEntity, TDerived> Count<T>(object dataset, Expression<Func<T, object>> property = null) => Count(dataset, property.ValidateArgument(nameof(property)).ExtractProperty(nameof(property)).Name);
+        ISelectStatementAggregatedValueBuilder<TEntity, TDerived> Count<T>(object dataset, Expression<Func<T, object>> property) => Count(dataset, property.ValidateArgument(nameof(property)).ExtractProperty(nameof(property)).Name);
         /// <summary>
         /// Counts the total amount of rows where column selected by <paramref name="property"/> from <typeparamref name="TEntity"/> is not null.
         /// </summary>
         /// <param name="dataset">Optional dataset alias to select column from</param>
         /// <param name="property">The expression that points to the property to use</param>
         /// <returns>Builder for configuring the selected value</returns>
-        ISelectStatementAggregatedValueBuilder<TEntity, TDerived> Count(object dataset, Expression<Func<TEntity, object>> property = null) => Count<TEntity>(dataset, property);
+        ISelectStatementAggregatedValueBuilder<TEntity, TDerived> Count(object dataset, Expression<Func<TEntity, object>> property) => Count<TEntity>(dataset, property);
         /// <summary>
         /// Counts the total amount of rows where <paramref name="column"/> is not null.
         /// </summary>
         /// <param name="column">The column to count</param>
         /// <returns>Builder for configuring the selected value</returns>
-        ISelectStatementAggregatedValueBuilder<TEntity, TDerived> Count(string column = null) => Count(null, column);
+        ISelectStatementAggregatedValueBuilder<TEntity, TDerived> Count(string column) => Count(null, column);
         /// <summary>
         /// Counts the total amount of rows where column selected by <paramref name="property"/> from <typeparamref name="T"/> is not null.
         /// </summary>
         /// <param name="property">The expression that points to the property to use</param>
         /// <returns>Builder for configuring the selected value</returns>
-        ISelectStatementAggregatedValueBuilder<TEntity, TDerived> Count<T>(Expression<Func<T, object>> property = null) => Count<T>(typeof(T), property);
+        ISelectStatementAggregatedValueBuilder<TEntity, TDerived> Count<T>(Expression<Func<T, object>> property) => Count<T>(typeof(T), property);
         /// <summary>
         /// Counts the total amount of rows where column selected by <paramref name="property"/> from <typeparamref name="TEntity"/> is not null.
         /// </summary>
         /// <param name="property">The expression that points to the property to use</param>
         /// <returns>Builder for configuring the selected value</returns>
-        ISelectStatementAggregatedValueBuilder<TEntity, TDerived> Count(Expression<Func<TEntity, object>> property = null) => Count<TEntity>(property);
+        ISelectStatementAggregatedValueBuilder<TEntity, TDerived> Count(Expression<Func<TEntity, object>> property) => Count<TEntity>(property);
 
         #endregion
         #region Avg
