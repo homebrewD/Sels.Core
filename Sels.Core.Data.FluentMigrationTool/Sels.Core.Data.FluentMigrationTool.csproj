@@ -44,7 +44,7 @@
 		<Exec Command="C:\NuGet\nuget.exe add $(ProjectDir)bin\$(Configuration)\$(PackageId).$(PackageVersion).nupkg -Source C:\NuGet -Verbosity Detailed" />
 	</Target>
 	<ItemGroup>
-	  <PackageReference Include="FluentMigrator.Runner" Version="5.0.0" />
+	  <PackageReference Include="FluentMigrator.Runner" Version="5.2.0" />
 	</ItemGroup>
 
   <ItemGroup>

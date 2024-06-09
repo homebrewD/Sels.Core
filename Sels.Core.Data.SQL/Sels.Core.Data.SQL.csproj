@@ -30,7 +30,7 @@
 		<DebugSymbols>false</DebugSymbols>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Dapper" Version="2.1.28" />
+		<PackageReference Include="Dapper" Version="2.1.35" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Frameworks\Sql\Query\Sels.SQL.QueryBuilder\Sels.SQL.QueryBuilder.csproj" />

@@ -47,7 +47,7 @@
 	</Target>
 
 	<ItemGroup>
-		<PackageReference Include="MySqlConnector" Version="2.3.3" />
+		<PackageReference Include="MySqlConnector" Version="2.3.7" />
 		<PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
 	</ItemGroup>
 

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <UserSecretsId>0c7cc336-61e4-448f-a725-33103e084109</UserSecretsId>
     <StartupObject>Sels.Core.TestTool.Program</StartupObject>
   </PropertyGroup>

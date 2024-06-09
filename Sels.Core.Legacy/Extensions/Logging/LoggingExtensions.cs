@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Sels.Core.Extensions.Text;
+using Sels.Core.Models.Disposables;
+using Sels.Core.Extensions.Collections;
 
 namespace Sels.Core.Extensions.Logging
 {
@@ -382,6 +384,69 @@ namespace Sels.Core.Extensions.Logging
         {
             if (loggers == null || !loggers.Any(x => x.IsEnabled(logLevel))) return new NullTimedLogger();
             return new StopWatchTimedLogger(loggers, logLevel, beginMessageFunc, endMessageFunc);
+        }
+        #endregion
+
+        #region Scope
+        /// <summary>
+        /// Tries to begin a logging scope with <paramref name="scope"/> if <paramref name="logger"/> is not null.
+        /// </summary>
+        /// <param name="logger">The logger to start the scope with</param>
+        /// <param name="scope">Dictionary containing the logging parameters</param>
+        /// <returns>A logging scope started with <paramref name="scope"/> or an instance of <see cref="NullDisposer"/> if <paramref name="logger"/> is null</returns>
+        public static IDisposable TryBeginScope(this ILogger logger, Dictionary<string, object> scope)
+        {
+            scope.ValidateArgument(nameof(scope));
+
+            if (logger == null) return NullDisposer.Instance;
+
+            return logger.BeginScope(scope);
+        }
+        /// <summary>
+        /// Tries to begin a logging scope with <paramref name="scope"/> if <paramref name="logger"/> is not null.
+        /// </summary>
+        /// <param name="logger">The logger to start the scope with</param>
+        /// <param name="scope">Dictionary containing the logging parameters</param>
+        /// <returns>A logging scope started with <paramref name="scope"/> or an instance of <see cref="NullDisposer"/> if <paramref name="logger"/> is null</returns>
+        public static IDisposable TryBeginScope(this ILogger logger, IDictionary<string, object> scope)
+        {
+            scope.ValidateArgument(nameof(scope));
+
+            if (logger == null) return NullDisposer.Instance;
+
+            return logger.BeginScope(scope);
+        }
+        /// <summary>
+        /// Tries to begin a logging scope with <paramref name="scope"/> if <paramref name="logger"/> is not null.
+        /// </summary>
+        /// <param name="logger">The logger to start the scope with</param>
+        /// <param name="scope">Dictionary containing the logging parameters</param>
+        /// <returns>A logging scope started with <paramref name="scope"/> or an instance of <see cref="NullDisposer"/> if <paramref name="logger"/> is null</returns>
+        public static IDisposable TryBeginScope(this ILogger logger, IReadOnlyDictionary<string, object> scope)
+        {
+            scope.ValidateArgument(nameof(scope));
+
+            if (logger == null) return NullDisposer.Instance;
+
+            return logger.BeginScope(scope);
+        }
+
+        /// <summary>
+        /// Tries to begin a logging scope with <paramref name="scope"/> if <paramref name="logger"/> is not null.
+        /// </summary>
+        /// <param name="logger">The logger to start the scope with</param>
+        /// <param name="scope">Key/value pairs containing the logging parameters</param>
+        /// <returns>A logging scope started with <paramref name="scope"/> or an instance of <see cref="NullDisposer"/> if <paramref name="logger"/> is null</returns>
+        public static IDisposable TryBeginScope(this ILogger logger, params KeyValuePair<string, object>[] scope)
+        {
+            scope.ValidateArgument(nameof(scope));
+
+            if (logger == null) return NullDisposer.Instance;
+
+            var parameters = new Dictionary<string, object>();
+            scope.Execute(x => parameters.AddOrUpdate(x.Key, x.Value));
+
+            return logger.BeginScope(scope);
         }
         #endregion
     }
