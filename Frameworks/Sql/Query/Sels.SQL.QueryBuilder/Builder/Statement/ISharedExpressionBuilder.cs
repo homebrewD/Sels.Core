@@ -101,24 +101,24 @@ namespace Sels.SQL.QueryBuilder.Builder.Statement
         /// Adds a sql parameter expression.
         /// </summary>
         /// <param name="parameter">The name of the sql parameter</param>
-        /// <param name="index">Optional index number to append after the name. Useful when using multiple entities in the same query.</param>
+        /// <param name="suffix">Optional suffix to appends after the name of the parameter. Useful when using multiple entities in the same query or when columns share the same name.</param>
         /// <returns>Builder for creating more expressions</returns>
-        TReturn Parameter(string parameter, int? index = null) => Expression(new SqlParameterExpression(parameter.ValidateArgumentNotNullOrWhitespace(nameof(parameter)), index));
+        TReturn Parameter(string parameter, string suffix = null) => Expression(new SqlParameterExpression(parameter.ValidateArgumentNotNullOrWhitespace(nameof(parameter)), suffix));
         /// <summary>
         /// Adds a sql parameter expression where the parameter name is taken from the property name selected by <paramref name="property"/> from <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">The type to select the property from</typeparam>
         /// <param name="property">The expression that points to the property to use</param>
-        /// <param name="index">Optional index number to append after the name. Useful when using multiple entities in the same query.</param>
+        /// <param name="suffix">Optional suffix to appends after the name of the parameter. Useful when using multiple entities in the same query or when columns share the same name.</param>
         /// <returns>Builder for creating more expressions</returns>
-        TReturn Parameter<T>(Expression<Func<T, object>> property, int? index = null) => Parameter(property.ValidateArgument(nameof(property)).ExtractProperty(nameof(property)).Name, index);
+        TReturn Parameter<T>(Expression<Func<T, object>> property, string suffix = null) => Parameter(property.ValidateArgument(nameof(property)).ExtractProperty(nameof(property)).Name, suffix);
         /// <summary>
         /// Adds a sql parameter expression where the parameter name is taken from the property name selected by <paramref name="property"/> from <typeparamref name="TEntity"/>.
         /// </summary>
         /// <param name="property">The expression that points to the property to use</param>
-        /// <param name="index">Optional index number to append after the name. Useful when using multiple entities in the same query.</param>
+        /// <param name="suffix">Optional suffix to appends after the name of the parameter. Useful when using multiple entities in the same query or when columns share the same name.</param>
         /// <returns>Builder for creating more expressions</returns>
-        TReturn Parameter(Expression<Func<TEntity, object>> property, int? index = null) => Parameter<TEntity>(property, index);
+        TReturn Parameter(Expression<Func<TEntity, object>> property, string suffix = null) => Parameter<TEntity>(property, suffix);
         #endregion
 
         #region Variable

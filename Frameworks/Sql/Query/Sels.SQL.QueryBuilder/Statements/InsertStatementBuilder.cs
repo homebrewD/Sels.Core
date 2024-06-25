@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using SqlParameterExpression = Sels.SQL.QueryBuilder.Builder.Expressions.ParameterExpression;
 
 namespace Sels.SQL.QueryBuilder.Builder.Statement
 {
@@ -83,11 +84,11 @@ namespace Sels.SQL.QueryBuilder.Builder.Statement
             return Values(GetColumnPropertiesFrom<T>(excludedProperties).Select(x => x.GetValue(valueObject)));
         }
         /// <inheritdoc/>
-        public IInsertStatementBuilder<TEntity> ParametersFrom<T>(int? suffix = null, params string[] excludedProperties)
+        public IInsertStatementBuilder<TEntity> ParametersFrom<T>(string suffix = null, params string[] excludedProperties)
         {
             var builder = this.CastTo<IInsertStatementBuilder<TEntity>>();
 
-            return builder.Parameters(GetColumnPropertiesFrom<T>(excludedProperties).Select(x => suffix.HasValue ? $"{x.Name}{suffix}" : x.Name));
+            return builder.Values(GetColumnPropertiesFrom<T>(excludedProperties).Select(x => x.Name).Select(x => new SqlParameterExpression(x, suffix)));
         }
         #endregion
 

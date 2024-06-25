@@ -406,12 +406,12 @@ namespace Sels.SQL.QueryBuilder.MySQL
                             }
                             else
                             {
-                                _logger.Warning($"{_name}: No table aliases defined. Using default format");
+                                _logger.Debug($"{_name}: No table aliases defined. Using default format");
                             }
                         }
                         else
                         {
-                            _logger.Warning($"{_name}: No expression is <{nameof(IObjectExpression)}>. Won't be able to determine table to delete from. Using default format");
+                            _logger.Debug($"{_name}: No expression is <{nameof(IObjectExpression)}>. Won't be able to determine table to delete from. Using default format");
                         }
                     }
 

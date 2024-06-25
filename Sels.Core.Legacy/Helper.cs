@@ -1522,7 +1522,7 @@ namespace Sels.Core
                 if (!token.CanBeCanceled) throw new InvalidOperationException($"CancellationToken can't be cancelled");
 
                 if (token.IsCancellationRequested) return;
-                var taskSource = new TaskCompletionSource<bool>();
+                var taskSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 using(token.Register(() => taskSource.TrySetResult(true)))
                 {
                     if (token.IsCancellationRequested) return;

@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="interceptorBuilder">Builder for creating the interceptor</param>
         /// <param name="useFactory">If a <see cref="ILoggerFactory"/> can be used to create a logger with the same category as the target instance, otherwise a <see cref="ILogger{TCategoryName}"/> will be used using the interceptor category</param>
         /// <returns>Current builder for method chaining</returns>
-        public static TDerived Trace<T, TImpl, TDerived>(this IProxyBuilder<T, TImpl, TDerived> builder, Func<ITracingInterceptorBuilder, object> interceptorBuilder, bool useFactory = true)
+        public static TDerived Trace<T, TImpl, TDerived>(this IProxyBuilder<T, TImpl, TDerived> builder, Func<ITracingInterceptorBuilder, object> interceptorBuilder, bool useFactory = false)
             where TImpl : class, T
             where T : class
         {
@@ -49,7 +49,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="interceptorBuilder">Builder for creating the interceptor</param>
         /// <param name="useFactory">If a <see cref="ILoggerFactory"/> can be used to create a logger with the same category as the target instance, otherwise a <see cref="ILogger{TCategoryName}"/> will be used using the interceptor category</param>
         /// <returns>Current builder for method chaining</returns>
-        public static TDerived Trace<T, TImpl, TDerived>(this IProxyBuilder<T, TImpl, TDerived> builder, Func< IServiceProvider, ITracingInterceptorBuilder, object> interceptorBuilder, bool useFactory = true)
+        public static TDerived Trace<T, TImpl, TDerived>(this IProxyBuilder<T, TImpl, TDerived> builder, Func< IServiceProvider, ITracingInterceptorBuilder, object> interceptorBuilder, bool useFactory = false)
             where TImpl : class, T
             where T : class
         {

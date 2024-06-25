@@ -134,7 +134,7 @@ namespace Sels.Core.Data.MySQL.Templates.Repository.MariaDb
                 var query = MySql.Insert<TEntity>().Into().ColumnsOf(excludedProperties)
                                     .ForEach(entities, (b, i, e) => {
                                         parameters.AddParametersUsing(e, x => $"{x.Name}{i}", excludedProperties);
-                                        return b.ParametersFrom(i, excludedProperties);
+                                        return b.ParametersFrom(i.ToString(), excludedProperties);
                                     })
                                     .Returning(x => x.All())
                                     .Build(ExpressionCompileOptions.Format);

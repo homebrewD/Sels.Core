@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
-using NuGet.Frameworks;
 using Sels.Core.Extensions.Conversion;
 using Sels.DistributedLocking.Provider;
 using System;

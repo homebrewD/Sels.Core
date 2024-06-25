@@ -44,7 +44,7 @@ namespace Sels.SQL.QueryBuilder.MySQL.Test
             var expected = "INSERT INTO `Person` (`Id`, `Name`, `SurName`) VALUES (@Id, @Name, @SurName), (@Id1, @Name1, @SurName1)".GetWithoutWhitespace().ToLower();
             var builder = MySql.Insert<Person>().Into().Column(x => x.Id).Column(x => x.Name).Column(x => x.SurName)
                             .Parameters("Id", "Name", "SurName")
-                            .ParametersFrom(1, nameof(Person.BirthDay), nameof(Person.ResidenceId));
+                            .ParametersFrom(1.ToString(), nameof(Person.BirthDay), nameof(Person.ResidenceId));
 
             // Act
             var query = builder.Build();

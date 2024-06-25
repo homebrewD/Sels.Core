@@ -45,7 +45,7 @@ namespace Sels.Core.Data.SQL.Extensions.Dapper
 
             foreach (var (entity, i) in entities.Select((x, i) => (x, i)))
             {
-                derived = builder.Parameters(i, property, properties);
+                derived = builder.Parameters(i.ToString(), property, properties);
 
                 foreach(var (name, getter) in propertyGetters)
                 {

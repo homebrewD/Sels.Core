@@ -431,9 +431,9 @@ namespace Sels.SQL.QueryBuilder
             public static ConstantExpression Value(object value) => new ConstantExpression(value);
             /// <inheritdoc cref="ParameterExpression"/>
             /// <param name="name">The name of the sql parameter</param>
-            /// <param name="index">Optional index number to append after the name. Useful when using multiple entities in the same query</param>
+            /// <param name="index">Optional suffix to appends after the name of the parameter. Useful when using multiple entities in the same query or when columns share the same name.</param>
             /// <returns>A new instance of <see cref="ParameterExpression"/></returns>
-            public static ParameterExpression Parameter(string name, int? index = null) => new ParameterExpression(name.ValidateArgument(nameof(name)), index);
+            public static ParameterExpression Parameter(string name, string index = null) => new ParameterExpression(name.ValidateArgument(nameof(name)), index);
             /// <summary>
             /// Creates a new expression created using <paramref name="builder"/>.
             /// </summary>

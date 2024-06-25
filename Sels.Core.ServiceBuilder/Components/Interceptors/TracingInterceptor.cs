@@ -20,6 +20,16 @@ namespace Sels.Core.ServiceBuilder.Interceptors
     /// </summary>
     public class TracingInterceptor : BaseResultlessInterceptor, ITracingInterceptorBuilder, IMethodDurationInterceptorBuilder
     {
+        // Statics
+        /// <summary>
+        /// Method that took longer to execute then the offset will be logged using the <see cref="LongRunningLogLevel"/> log level. Usefull for debugging.
+        /// </summary>
+        public static TimeSpan? LongRunningOffset { get; set; }
+        /// <summary>
+        /// The log elvel that will be used to trace long running method.
+        /// </summary>
+        public static LogLevel LongRunningLogLevel { get; set; } = LogLevel.Warning;
+        
         // Fields
         private readonly ILoggerFactory _factory;
         private readonly ILogger _logger;
@@ -62,7 +72,16 @@ namespace Sels.Core.ServiceBuilder.Interceptors
 
                 if(tracer != null)
                 {
-                    var method = invocation.Method.GetDisplayName(MethodDisplayOptions.MethodOnly);
+                    string method = null;
+                    if(_factory != null)
+                    {
+                        method = invocation.Method.GetDisplayName(MethodDisplayOptions.MethodOnly);
+                    }
+                    else
+                    {
+                        method = $"{invocation.TargetType.Name}.{invocation.Method.GetDisplayName(MethodDisplayOptions.MethodOnly)}";
+                    }
+
                     logger.Trace($"Executing method <{method}>");
                     using (Helper.Time.CaptureDuration(x =>
                     {
@@ -72,6 +91,7 @@ namespace Sels.Core.ServiceBuilder.Interceptors
                             logLevel = x.Key;
                         });
                         logger.LogMessage(logLevel, $"Executed method <{method}> in <{x}>");
+                        if (LongRunningOffset.HasValue && LongRunningOffset.Value <= x) logger.LogMessage(LongRunningLogLevel, $"Long running method: {method}[{x}]");
                     }))
                     {
                         await proceed(invocation, proceedInfo);

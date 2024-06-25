@@ -19,18 +19,18 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
         /// </summary>
         public string Name { get; }
         /// <summary>
-        /// Optional index number to append after the name.
-        /// Useful when using multiple entities in the same query.
+        /// Optional suffix to appends after <see cref="Name"/>.
+        /// Useful when using multiple entities in the same query or when columns share the same name.
         /// </summary>
-        public int? Index { get; }
+        public string Suffix { get; }
 
         ///<inheritdoc cref="ParameterExpression"/>
         /// <param name="name"><see cref="Name"/></param>
-        /// <param name="index"><inheritdoc cref="Index"/></param>
-        public ParameterExpression(string name, int? index = null)
+        /// <param name="suffix"><inheritdoc cref="Suffix"/></param>
+        public ParameterExpression(string name, string suffix = null)
         {
             Name = name.ValidateArgumentNotNullOrWhitespace(nameof(name));
-            Index = index;
+            Suffix = suffix;
         }
 
         /// <inheritdoc/>
@@ -52,7 +52,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
 
             if(!Name.StartsWith(parameterPrefix)) builder.Append(parameterPrefix);
             builder.Append(Name);
-            if(Index.HasValue) builder.Append(Index.Value);
+            if(Suffix.HasValue()) builder.Append(Suffix);
         }
     }
 }
