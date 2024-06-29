@@ -390,7 +390,7 @@ namespace Sels.Core.Extensions.Collections
 
         #region AddValue
         /// <summary>
-        /// Adds <paramref name="value"/> to <paramref name="dictionary"/> if no entry with <paramref name="key"/> exists, otherwise the value is added using <paramref name="key"/>.
+        /// Adds <paramref name="value"/> to <paramref name="dictionary"/> if no entry with <paramref name="key"/> exists, otherwise the value is updated using <paramref name="key"/>.
         /// </summary>
         /// <typeparam name="TKey">Type of the key in <paramref name="dictionary"/></typeparam>
         /// <typeparam name="TValue">Type of the value in <paramref name="dictionary"/></typeparam>
@@ -410,6 +410,76 @@ namespace Sels.Core.Extensions.Collections
             {
                 dictionary.Add(key, value);
             }
+        }
+        /// <summary>
+        /// Adds <paramref name="value"/> to <paramref name="dictionary"/> if no entry with <paramref name="key"/> exists.
+        /// </summary>
+        /// <typeparam name="TKey">Type of the key in <paramref name="dictionary"/></typeparam>
+        /// <typeparam name="TValue">Type of the value in <paramref name="dictionary"/></typeparam>
+        /// <param name="dictionary">The dictionary to add the value to</param>
+        /// <param name="key">The key to add to</param>
+        /// <param name="value">The value to add</param>
+        public static void AddIfMissing<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
+        {
+            dictionary.ValidateArgument(nameof(dictionary));
+            key.ValidateArgument(nameof(key));
+
+            if (!dictionary.ContainsKey(key))
+            {
+                dictionary.Add(key, value);
+            }
+        }
+
+        /// <summary>
+        /// Adds <paramref name="value"/> to <paramref name="dictionary"/> if no entry with <paramref name="key"/> exists, otherwise the value is updated using <paramref name="key"/>.
+        /// </summary>
+        /// <typeparam name="TKey">Type of the key in <paramref name="dictionary"/></typeparam>
+        /// <typeparam name="TValue">Type of the value in <paramref name="dictionary"/></typeparam>
+        /// <param name="dictionary">The dictionary to add the value to</param>
+        /// <param name="key">The key to add to</param>
+        /// <param name="value">The value to add</param>
+        /// <returns><paramref name="dictionary"/> for method chaining</returns>
+        public static IDictionary<TKey, TValue> AddOrUpdateFluently<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
+        {
+            dictionary.ValidateArgument(nameof(dictionary));
+            key.ValidateArgument(nameof(key));
+
+            dictionary.AddOrUpdate(key, value);
+            return dictionary;
+        }
+        /// <summary>
+        /// Adds <paramref name="value"/> to <paramref name="dictionary"/> if no entry with <paramref name="key"/> exists.
+        /// </summary>
+        /// <typeparam name="TKey">Type of the key in <paramref name="dictionary"/></typeparam>
+        /// <typeparam name="TValue">Type of the value in <paramref name="dictionary"/></typeparam>
+        /// <param name="dictionary">The dictionary to add the value to</param>
+        /// <param name="key">The key to add to</param>
+        /// <param name="value">The value to add</param>
+        /// <returns><paramref name="dictionary"/> for method chaining</returns>
+        public static IDictionary<TKey, TValue> AddIfMissingFluently<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
+        {
+            dictionary.ValidateArgument(nameof(dictionary));
+            key.ValidateArgument(nameof(key));
+
+            dictionary.AddIfMissing(key, value);
+            return dictionary;
+        }
+        /// <summary>
+        /// Adds <paramref name="value"/> to <paramref name="dictionary"/>.
+        /// </summary>
+        /// <typeparam name="TKey">Type of the key in <paramref name="dictionary"/></typeparam>
+        /// <typeparam name="TValue">Type of the value in <paramref name="dictionary"/></typeparam>
+        /// <param name="dictionary">The dictionary to add the value to</param>
+        /// <param name="key">The key to add to</param>
+        /// <param name="value">The value to add</param>
+        /// <returns><paramref name="dictionary"/> for method chaining</returns>
+        public static IDictionary<TKey, TValue> AddFluently<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
+        {
+            dictionary.ValidateArgument(nameof(dictionary));
+            key.ValidateArgument(nameof(key));
+
+            dictionary.Add(key, value);
+            return dictionary;
         }
 
         /// <summary>

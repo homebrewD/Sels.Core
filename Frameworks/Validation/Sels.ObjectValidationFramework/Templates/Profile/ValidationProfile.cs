@@ -18,6 +18,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Sels.Core.Extensions.Collections;
 using Sels.Core.Extensions.DateTimes;
+using Sels.Core.Extensions.Fluent;
 
 namespace Sels.ObjectValidationFramework.Profile
 {
@@ -415,16 +416,16 @@ namespace Sels.ObjectValidationFramework.Profile
                 if (executionContext.IsPropertyFallthroughDisabled) return;
 
                 // Execute fallthrough
-                foreach(var property in executionContext.GetProperties(objectToValidate.GetType()))
+                foreach(var (property, ignoretype) in executionContext.GetProperties(objectToValidate.GetType()))
                 {
                     var value = property.GetValue(objectToValidate);
 
                     if(value != null)
                     {
                         // Allowed if property is a collection but not any of the special collection types
-                        var isAllowedForCollectionFallthough = !executionContext.IsCollectionFallthroughDisabled && value.GetType().IsContainer() && !IsIgnoredFor(IgnoreType.Collection, value, property, executionContext.Context);
+                        var isAllowedForCollectionFallthough = !executionContext.IsCollectionFallthroughDisabled && !ignoretype.HasFlag(IgnoreType.Collection) && value.GetType().IsContainer() && !IsIgnoredFor(IgnoreType.Collection, value, property, executionContext.Context);
                         // Allowed if the property doesn't have a validator explicitly defined and isn't a default ignored type
-                        var isAllowedForPropertyFallthough = !IsIgnoredFor(IgnoreType.Fallthrough, value, property, executionContext.Context);
+                        var isAllowedForPropertyFallthough =  !ignoretype.HasFlag(IgnoreType.Fallthrough) && !IsIgnoredFor(IgnoreType.Fallthrough, value, property, executionContext.Context);
 
                         if(isAllowedForCollectionFallthough || isAllowedForPropertyFallthough)
                         {
@@ -479,7 +480,7 @@ namespace Sels.ObjectValidationFramework.Profile
         private class ExecutionContext
         {
             // Fields
-            private readonly Dictionary<Type, PropertyInfo[]> _propertyCache = new Dictionary<Type, PropertyInfo[]>();
+            private readonly Dictionary<Type, (PropertyInfo Property, IgnoreType IgnoreType)[]> _propertyCache = new Dictionary<Type, (PropertyInfo Property, IgnoreType IgnoreType)[]>();
             private readonly BindingFlags _bindingFlags;
             private readonly ProfileExecutionOptions _options;
 
@@ -524,10 +525,21 @@ namespace Sels.ObjectValidationFramework.Profile
             /// </summary>
             /// <param name="type">The type to get the properties for</param>
             /// <returns>All properties to fallthrough on type <paramref name="type"/> or an empty array when there aren't any properties</returns>
-            public PropertyInfo[] GetProperties(Type type)
+            public (PropertyInfo Property, IgnoreType IgnoreType)[] GetProperties(Type type)
             {
                 type.ValidateArgument(nameof(type));
-                return _propertyCache.TryGetOrSet(type, () => type.GetProperties(_bindingFlags).Where(x => x.GetIndexParameters().Length == 0).ToArray());
+                return _propertyCache.TryGetOrSet(type, () =>
+                {
+                    var classAttribute = type.GetCustomAttribute<IgnoreInValidationAttribute>();
+
+                    return type.GetProperties(_bindingFlags).Where(x => x.GetIndexParameters().Length == 0).Select(x =>
+                    {
+                        var attribute = x.GetCustomAttribute<IgnoreInValidationAttribute>();
+                        if (attribute != null) return (Property: x, IgnoreType: attribute.IgnoreType);
+                        if (classAttribute != null) return (Property: x, IgnoreType: classAttribute.IgnoreType);
+                        return (Property: x, IgnoreType: IgnoreType.None);
+                    }).Where(x => !x.IgnoreType.HasFlag(IgnoreType.All)).ToArray();
+                });
             }
         }
     }
@@ -563,6 +575,10 @@ namespace Sels.ObjectValidationFramework.Profile
     public enum IgnoreType
     {
         /// <summary>
+        /// Ignored for nothing.
+        /// </summary>
+        None = 0,
+        /// <summary>
         /// Property is ignored for fallthrough. 
         /// </summary>
         Fallthrough = 1,
@@ -570,5 +586,9 @@ namespace Sels.ObjectValidationFramework.Profile
         /// If the property is a collection the items will not be validated.
         /// </summary>
         Collection = 2,
+        /// <summary>
+        /// Ignored for everything.
+        /// </summary>
+        All = Fallthrough | Collection
     }
 }

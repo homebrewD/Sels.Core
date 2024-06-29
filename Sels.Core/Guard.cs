@@ -2,6 +2,7 @@
 using Sels.Core.Extensions.Collections;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 
 namespace Sels.Core
@@ -35,6 +36,23 @@ namespace Sels.Core
             if (errorMessageConstructor == null) throw new ArgumentException(nameof(errorMessageConstructor));
 
             if (!condition()) throw errorMessageConstructor();
+        }
+
+        /// <summary>
+        /// Values that <paramref name="argument"/> passes <paramref name="condition"/>. If it doesn't an <see cref="ArgumentException"/> will be thrown.
+        /// </summary>
+        /// <typeparam name="T">The type of the argument being validated</typeparam>
+        /// <param name="argument">The argument being validated</param>
+        /// <param name="condition">The predicate that checks if <paramref name="argument"/> is valid</param>
+        /// <param name="expression">The expression of the argument being checked. Compiler will fill it out automatically so no need to provide it</param>
+        /// <returns><paramref name="argument"/> if it's valid</returns>
+        public static T Is<T>(T argument, Expression<Predicate<T>> condition, [CallerArgumentExpression("argument")] string expression = "")
+        {
+            condition.ValidateArgument(nameof(condition));
+            expression.ValidateArgumentNotNullOrWhitespace(nameof(expression));
+
+            if (!condition.Compile().Invoke(argument)) throw new ArgumentException($"{expression} did not pass condition <{condition}>");
+            return argument;
         }
 
         /// <summary>

@@ -696,6 +696,7 @@ namespace Sels.Core.Async.TaskManagement
                 }
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             _logger.Warning($"Named task <{existingTask.Name}> already running");
             return (false, existingTask);
         }

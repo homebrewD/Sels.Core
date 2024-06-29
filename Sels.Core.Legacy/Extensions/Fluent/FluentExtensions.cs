@@ -62,6 +62,32 @@ namespace Sels.Core.Extensions.Fluent
             return source;
         }
         /// <summary>
+        /// Executes <paramref name="action"/> when <paramref name="condition"/> is set to true for each item in <paramref name="source"/>.
+        /// </summary>
+        /// <typeparam name="T">Type of the fluent object</typeparam>
+        /// <param name="source">The fluent object to perform the actions on</param>
+        /// <param name="condition">Boolean that indicates if we can execute <paramref name="action"/></param>
+        /// <param name="action">The action to execute with <paramref name="source"/></param>
+        /// <returns><paramref name="source"/> or the return value from <paramref name="action"/> when <paramref name="condition"/> was true</returns>
+        public static IEnumerable<T> WhenForEach<T>(this IEnumerable<T> source, bool condition, Func<T, T> action)
+        {
+            source.ValidateArgument(nameof(source));
+            action.ValidateArgument(nameof(action));
+
+            if (condition)
+            {
+                foreach(var item in source)
+                {
+                   yield return action(item);
+                }
+            }
+
+            foreach (var item in source)
+            {
+                yield return item;
+            }
+        }
+        /// <summary>
         /// Executes <paramref name="action"/> when <paramref name="condition"/> is set to true.
         /// </summary>
         /// <typeparam name="T">Type of the fluent object</typeparam>

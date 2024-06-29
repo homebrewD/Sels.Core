@@ -448,6 +448,36 @@ namespace Sels.Core.Extensions.Logging
 
             return logger.BeginScope(scope);
         }
+        /// <summary>
+        /// Tries to begin a logging scope with the scope configured by <paramref name="scopeBuilder"/> if <paramref name="logger"/> is not null.
+        /// </summary>
+        /// <param name="logger">The logger to start the scope with</param>
+        /// <param name="scopeBuilder">Delegate that is used to configure the logging scope</param>
+        /// <returns>A logging scope started with the scope configured by <paramref name="scopeBuilder"/> or an instance of <see cref="NullDisposer"/> if <paramref name="logger"/> is null</returns>
+        public static IDisposable TryBeginScope(this ILogger logger, Action<IDictionary<string,object>> scopeBuilder)
+        {
+            if (logger == null) return NullDisposer.Instance;
+            scopeBuilder.ValidateArgument(nameof(scopeBuilder));
+            var scope = new Dictionary<string, object>();
+            scopeBuilder(scope);
+
+            return logger.TryBeginScope(scope);
+        }
+
+        /// <summary>
+        /// Tries to begin a logging scope with <paramref name="key"/> and <paramref name="value"/> if <paramref name="logger"/> is not null.
+        /// </summary>
+        /// <param name="logger">The logger to start the scope with</param>
+        /// <param name="key">The name of the log parameter</param>
+        /// <param name="value">The value of the log parameter</param>
+        /// <returns>A logging scope started with a single key/value pair created from <paramref name="key"/> and <paramref name="value"/> or an instance of <see cref="NullDisposer"/> if <paramref name="logger"/> is null</returns>
+        public static IDisposable TryBeginScope(this ILogger logger, string key, object value)
+        {
+            if (logger == null) return NullDisposer.Instance;
+            key.ValidateArgumentNotNullOrWhitespace(nameof(key));
+
+            return logger.TryBeginScope(x => x.Add(key, value));
+        }
         #endregion
     }
 }
