@@ -58,8 +58,9 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return builder.InterceptedBy(x =>
             {
-                var interceptor = useFactory ? new TracingInterceptor(x.GetService<ILoggerFactory>()) : new TracingInterceptor(x.GetService<ILogger<TracingInterceptor>>());
+                var interceptor = useFactory ? new TracingInterceptor(x.GetService<IMemoryCache>(), x.GetService<ILoggerFactory>()) : new TracingInterceptor(x.GetService<IMemoryCache>(), x.GetService<ILogger<TracingInterceptor>>());
                 interceptorBuilder(x, interceptor);
+                interceptor.Validate();
                 return interceptor.ToInterceptor();
             });
         }

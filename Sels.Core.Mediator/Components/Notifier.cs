@@ -30,7 +30,7 @@ namespace Sels.Core.Mediator
     public class Notifier : INotifier, IAsyncDisposable
     {
         // Statics
-        private static MethodInfo GenericRequestMethod = Helper.Expression.GetMethod<Notifier>(x => x.RequestAsync<NullRequest, Null>(default, default, default, default)).GetGenericMethodDefinition();
+        private static MethodInfo GenericRequestMethod = Helper.Expressions.Method.GetMethod<Notifier>(x => x.RequestAsync<NullRequest, Null>(default, default, default, default)).GetGenericMethodDefinition();
 
         // Fields
         private readonly IOptionsMonitor<NotifierOptions> _options;

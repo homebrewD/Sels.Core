@@ -68,8 +68,8 @@ namespace Sels.Core.Conversion
             var sourceParameterExpression = System.Linq.Expressions.Expression.Parameter(typeof(TSource), "s");
             var targetParameterExpression = System.Linq.Expressions.Expression.Parameter(typeof(TTarget), "t");
 
-            var canConvertMethod = Helper.Expression.GetMethod<ITypeConverter>(x => x.CanConvert(null, null, null));
-            var convertMethod = Helper.Expression.GetMethod<ITypeConverter>(x => x.ConvertTo(null, null, null));
+            var canConvertMethod = Helper.Expressions.Method.GetMethod<ITypeConverter>(x => x.CanConvert(null, null, null));
+            var convertMethod = Helper.Expressions.Method.GetMethod<ITypeConverter>(x => x.ConvertTo(null, null, null));
 
             var expressions = new List<System.Linq.Expressions.Expression>();
             foreach(var property in properties)

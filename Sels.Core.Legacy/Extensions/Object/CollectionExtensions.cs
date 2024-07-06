@@ -1,5 +1,6 @@
 ﻿using Sels.Core.Extensions.Conversion;
 using Sels.Core.Extensions.Linq;
+using Sels.Core.Extensions.Reflection;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -429,7 +430,55 @@ namespace Sels.Core.Extensions.Collections
                 dictionary.Add(key, value);
             }
         }
+        /// <summary>
+        /// Adds <paramref name="value"/> to <paramref name="dictionary"/> if no entry with <paramref name="key"/> exists or if the existing value is null.
+        /// </summary>
+        /// <typeparam name="TKey">Type of the key in <paramref name="dictionary"/></typeparam>
+        /// <typeparam name="TValue">Type of the value in <paramref name="dictionary"/></typeparam>
+        /// <param name="dictionary">The dictionary to add the value to</param>
+        /// <param name="key">The key to add to</param>
+        /// <param name="value">The value to add</param>
+        public static void AddIfMissingOrNull<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
+        {
+            dictionary.ValidateArgument(nameof(dictionary));
+            key.ValidateArgument(nameof(key));
 
+            if (!dictionary.ContainsKey(key))
+            {
+                dictionary.Add(key, value);
+            }
+            else if (dictionary[key] == null)
+            {
+
+               dictionary[key] = value;
+            }
+        }
+        /// <summary>
+        /// Adds <paramref name="value"/> to <paramref name="dictionary"/> if no entry with <paramref name="key"/> exists or if the existing value is the default value for the type.
+        /// </summary>
+        /// <typeparam name="TKey">Type of the key in <paramref name="dictionary"/></typeparam>
+        /// <typeparam name="TValue">Type of the value in <paramref name="dictionary"/></typeparam>
+        /// <param name="dictionary">The dictionary to add the value to</param>
+        /// <param name="key">The key to add to</param>
+        /// <param name="value">The value to add</param>
+        public static void AddIfMissingOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
+        {
+            dictionary.ValidateArgument(nameof(dictionary));
+            key.ValidateArgument(nameof(key));
+
+            if (!dictionary.ContainsKey(key))
+            {
+                dictionary.Add(key, value);
+            }
+            else if (dictionary[key] == null)
+            {
+                dictionary[key] = value;
+            }
+            else if (dictionary[key].Equals(dictionary[key].GetType().GetDefaultValue()))
+            {
+                dictionary[key] = value;
+            }
+        }
         /// <summary>
         /// Adds <paramref name="value"/> to <paramref name="dictionary"/> if no entry with <paramref name="key"/> exists, otherwise the value is updated using <paramref name="key"/>.
         /// </summary>

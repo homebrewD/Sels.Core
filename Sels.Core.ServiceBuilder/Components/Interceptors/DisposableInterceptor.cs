@@ -20,8 +20,8 @@ namespace Sels.Core.ServiceBuilder.Interceptors
     public class DisposableInterceptor : BaseResultlessInterceptor
     {
         // Statis
-        private static MethodInfo DisposeMethod = Helper.Expression.GetMethod<IDisposable>(x => x.Dispose());
-        private static MethodInfo DisposeAsyncMethod = Helper.Expression.GetMethod<IAsyncDisposable>(x => x.DisposeAsync());
+        private static MethodInfo DisposeMethod = Helper.Expressions.Method.GetMethod<IDisposable>(x => x.Dispose());
+        private static MethodInfo DisposeAsyncMethod = Helper.Expressions.Method.GetMethod<IAsyncDisposable>(x => x.DisposeAsync());
 
         // Fields
         private readonly ILogger _logger;

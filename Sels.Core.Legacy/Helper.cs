@@ -13,6 +13,7 @@ using Sels.Core.Extensions.Logging;
 using SystemConsole = System.Console;
 using SystemRandom = System.Random;
 using SystemProcess = System.Diagnostics.Process;
+using LinqExpression = System.Linq.Expressions.Expression;
 using Sels.Core.Extensions.Reflection;
 using static Sels.Core.Delegates.Async;
 using Newtonsoft.Json.Linq;
@@ -31,6 +32,7 @@ using System.Runtime.InteropServices;
 using Sels.Core.Text.Token;
 using System.Text;
 using Sels.Core.Extensions.Conversion;
+using Sels.Core.Tracing;
 
 namespace Sels.Core
 {
@@ -68,9 +70,9 @@ namespace Sels.Core
             /// </summary>
             /// <param name="path">The path string to validate</param>
             /// <returns>If <paramref name="path"/> is a valid directory</returns>
-            public static bool IsValidDirectoryPath(string path) 
+            public static bool IsValidDirectoryPath(string path)
             {
-                if(path.HasValue())
+                if (path.HasValue())
                 {
                     return !path.ToCharArray().Any(x => Path.GetInvalidPathChars().Contains(x));
                 }
@@ -237,7 +239,7 @@ namespace Sels.Core
             {
                 action.ValidateArgument(nameof(action));
 
-                SystemConsole.CancelKeyPress += (x, y) => action(x,y);
+                SystemConsole.CancelKeyPress += (x, y) => action(x, y);
             }
 
             /// <summary>
@@ -271,8 +273,8 @@ namespace Sels.Core
 
                 // Used for published configs
                 Directory.SetCurrentDirectory(baseDir);
-            }     
-            
+            }
+
             /// <summary>
             /// Returns the current os platform.
             /// </summary>
@@ -376,7 +378,7 @@ namespace Sels.Core
                 {
                     var token = tokenEnumerator.Current;
 
-                    if(token is TextToken textToken)
+                    if (token is TextToken textToken)
                     {
                         builder.Append(textToken.Text);
                     }
@@ -385,7 +387,7 @@ namespace Sels.Core
                         TextToken parameterName = null;
                         ParameterEndToken parameterEnd = null;
                         // Parse
-                        if(tokenEnumerator.MoveNext())
+                        if (tokenEnumerator.MoveNext())
                         {
                             var nextToken = tokenEnumerator.Current;
                             // Start token is escaped
@@ -405,9 +407,9 @@ namespace Sels.Core
                         }
 
                         // Validate
-                        if( parameterName == null) throw new FormatException($"Expected text token after parameter start token but got nothing");
+                        if (parameterName == null) throw new FormatException($"Expected text token after parameter start token but got nothing");
                         if (!parameterName.Text.HasValue() || parameterName.Text.ContainsWhitespace()) throw new FormatException($"Parameter cannot contain whitespace characters or contain only whitespace characters");
-                        if(parameterEnd == null) throw new FormatException($"Expected parameter end token after text token but got nothing");
+                        if (parameterEnd == null) throw new FormatException($"Expected parameter end token after text token but got nothing");
 
                         // Resolve
                         int position;
@@ -423,14 +425,14 @@ namespace Sels.Core
 
                         if (position >= parameters.Length) throw new FormatException($"Template requires parameter in position <{position}> but only <{parameters.Length}> parameters were provided");
                         builder.Append(parameters[position] ?? "NULL");
-                    } 
+                    }
                     else if (token is ParameterEndToken)
                     {
                         if (tokenEnumerator.MoveNext())
                         {
                             var nextToken = tokenEnumerator.Current;
                             // Escaped end token
-                            if(nextToken is ParameterEndToken endToken)
+                            if (nextToken is ParameterEndToken endToken)
                             {
                                 builder.Append(endToken.Value);
                                 continue;
@@ -455,7 +457,7 @@ namespace Sels.Core
                 var currentPosition = 0;
                 var buffer = new List<char>();
 
-                while(currentPosition < template.Length)
+                while (currentPosition < template.Length)
                 {
                     var currentChar = template[currentPosition];
 
@@ -484,7 +486,7 @@ namespace Sels.Core
                     currentPosition++;
                 }
 
-                if(TryFlushBuffer(out var lastTextToken))
+                if (TryFlushBuffer(out var lastTextToken))
                 {
                     yield return lastTextToken;
                 }
@@ -541,7 +543,7 @@ namespace Sels.Core
 
                 if (values.HasValue())
                 {
-                    foreach(var value in values)
+                    foreach (var value in values)
                     {
                         if (value.HasValue())
                         {
@@ -571,9 +573,9 @@ namespace Sels.Core
             {
                 if (enumerators.HasValue())
                 {
-                    foreach(var enumerator in enumerators.Where(x => x != null))
+                    foreach (var enumerator in enumerators.Where(x => x != null))
                     {
-                        foreach(var element in enumerator)
+                        foreach (var element in enumerator)
                         {
                             yield return element;
                         }
@@ -629,7 +631,7 @@ namespace Sels.Core
             {
                 if (values.HasValue())
                 {
-                    foreach(var value in values)
+                    foreach (var value in values)
                     {
                         yield return value;
                     }
@@ -992,9 +994,9 @@ namespace Sels.Core
             private static object _threadLock = new object();
             private static ThreadLocal<SystemRandom> ThreadInstance => new ThreadLocal<SystemRandom>(() =>
             {
-                lock(_threadLock)
+                lock (_threadLock)
                 {
-                    return new SystemRandom(++_threadSeed+ Environment.TickCount);
+                    return new SystemRandom(++_threadSeed + Environment.TickCount);
                 }
             });
             /// <summary>
@@ -1012,7 +1014,7 @@ namespace Sels.Core
             {
                 max.ValidateArgumentLarger(nameof(max), min);
 
-                return Instance.Next(min, max+1);
+                return Instance.Next(min, max + 1);
             }
             /// <summary>
             /// Returns a random double larger or equal to <paramref name="min"/> and smaller or equal to <paramref name="max"/>.
@@ -1033,118 +1035,375 @@ namespace Sels.Core
         /// <summary>
         /// Contains static helper methods for working with expressions.
         /// </summary>
-        public static class Expression
+        public static class Expressions
         {
             /// <summary>
-            /// Returns the method info extracted from <paramref name="methodExpression"/>
+            /// Contains an expression with the default value of <typeparamref name="T"/>
             /// </summary>
-            /// <typeparam name="T">Type to select the method from</typeparam>
-            /// <param name="methodExpression">The expression that selects the method</param>
-            /// <returns>The MethodInfo in <paramref name="methodExpression"/></returns>
-            public static MethodInfo GetMethod<T>(Expression<Func<T, object>> methodExpression)
+            /// <typeparam name="T">The type to get the default expression for</typeparam>
+            public class Default<T>
             {
-                methodExpression.ValidateArgument(nameof(methodExpression));
-
-                if (!methodExpression.TryExtractMethod(out var method)) throw new InvalidOperationException($"{nameof(methodExpression)} does not point to a method");
-                return method;
-            }
-            /// <summary>
-            /// Returns the method info extracted from <paramref name="methodExpression"/>
-            /// </summary>
-            /// <typeparam name="T">Type to select the method from</typeparam>
-            /// <param name="methodExpression">The expression that selects the method</param>
-            /// <returns>The MethodInfo in <paramref name="methodExpression"/></returns>
-            public static MethodInfo GetMethod<T>(Expression<Action<T>> methodExpression)
-            {
-                methodExpression.ValidateArgument(nameof(methodExpression));
-
-                if (!methodExpression.TryExtractMethod(out var method)) throw new InvalidOperationException($"{nameof(methodExpression)} does not point to a method");
-                return method;
-            }
-            /// <summary>
-            /// Returns the method info extracted from <paramref name="methodExpression"/>
-            /// </summary>
-            /// <param name="methodExpression">The expression that selects the method</param>
-            /// <returns>The MethodInfo in <paramref name="methodExpression"/></returns>
-            public static MethodInfo GetMethod(Expression<Func<object>> methodExpression)
-            {
-                methodExpression.ValidateArgument(nameof(methodExpression));
-
-                if (!methodExpression.TryExtractMethod(out var method)) throw new InvalidOperationException($"{nameof(methodExpression)} does not point to a method");
-                return method;
-            }
-            /// <summary>
-            /// Returns the method info extracted from <paramref name="methodExpression"/>
-            /// </summary>
-            /// <param name="methodExpression">The expression that selects the method</param>
-            /// <returns>The MethodInfo in <paramref name="methodExpression"/></returns>
-            public static MethodInfo GetMethod(Expression<Action> methodExpression)
-            {
-                methodExpression.ValidateArgument(nameof(methodExpression));
-
-                if (!methodExpression.TryExtractMethod(out var method)) throw new InvalidOperationException($"{nameof(methodExpression)} does not point to a method");
-                return method;
+                /// <summary>
+                /// Constant expression with the default value of <typeparamref name="T"/>
+                /// </summary>
+                public static ConstantExpression Expression { get; } = LinqExpression.Constant(default(T));
             }
 
             /// <summary>
-            /// Returns the method call expression extracted from <paramref name="methodExpression"/>
+            /// Static helper methods related to generating expressions that help with tracing.
             /// </summary>
-            /// <typeparam name="T">Type to select the method from</typeparam>
-            /// <param name="methodExpression">The expression that selects the method</param>
-            /// <returns>The MethodCallExpression in <paramref name="methodExpression"/></returns>
-            public static MethodCallExpression GetMethodCallExpression<T>(Expression<Func<T, object>> methodExpression)
+            public static class Tracing
             {
-                methodExpression.ValidateArgument(nameof(methodExpression));
+                /// <summary>
+                /// Tries to generate a delegate that enriches a dictionary with log paramaters by <see cref="TraceableAttribute"/>(s) defined on <paramref name="type"/>.
+                /// </summary>
+                /// <param name="type">The type to generate the delegate from</param>
+                /// <param name="enricher">The generated delegate if this method returns true</param>
+                /// <param name="conflictHandling">How conflicts should be handled when duplicate log parameters are used</param>
+                /// <param name="elvisOperator">If the generated expression should use the elvis operator when selecting the value (e.g. rootObject?.ParentProperty?.ChildProperty?.NestedChildProperty)</param>
+                /// <param name="topLevelOnly">If only <see cref="TraceableAttribute"/>(s) defined on <paramref name="type"/> and it's properties should be considered, set to false to go through the full hierarchy</param>
+                /// <returns></returns>
+                public static bool TryGenerateEnrichmentDelegate(Type type, out Action<object, IDictionary<string, object>> enricher, TraceableConflictHandling conflictHandling = TraceableConflictHandling.UpdateIfDefault, bool elvisOperator = true, bool topLevelOnly = false)
+                {
+                    type = type.ValidateArgument(nameof(type));
+                    enricher = null;
 
-                return methodExpression.ExtractMethodCall();
+                    // Prepare expressions
+                    var root = LinqExpression.Parameter(typeof(object), "root");
+                    var dictionary = LinqExpression.Parameter(typeof(IDictionary<string, object>), "dictionary");
+                    var expressions = new List<LinqExpression>();
+                    var castedRoot = LinqExpression.Variable(type, "castedRoot");
+                    var assignCastedRoot = LinqExpression.Assign(castedRoot, LinqExpression.Convert(root, type));
+                    MethodInfo addToDictionary;
+
+                    // Determine the method to call to add the value from the traceable attribute to the dictionary
+                    switch (conflictHandling)
+                    {
+                        case TraceableConflictHandling.Ignore:
+                            addToDictionary = Method.GetMethod(() => Sels.Core.Extensions.Collections.CollectionExtensions.AddIfMissing<string, object>(default, default, default));
+                            break;
+                        case TraceableConflictHandling.Update:
+                            addToDictionary = Method.GetMethod(() => Sels.Core.Extensions.Collections.CollectionExtensions.AddOrUpdate<string, object>(default, default, default));
+                            break;
+                        case TraceableConflictHandling.UpdateIfNull:
+                            addToDictionary = Method.GetMethod(() => Sels.Core.Extensions.Collections.CollectionExtensions.AddIfMissingOrNull<string, object>(default, default, default));
+                            break;
+                        case TraceableConflictHandling.UpdateIfDefault:
+                            addToDictionary = Method.GetMethod(() => Sels.Core.Extensions.Collections.CollectionExtensions.AddIfMissingOrDefault<string, object>(default, default, default));
+                            break;
+                        case TraceableConflictHandling.Exception:
+                            addToDictionary = Method.GetMethod<IDictionary<string, object>>(x => x.Add(default, default));
+                            break;
+                        default: throw new NotSupportedException($"Conflict handling mode <{conflictHandling}> is not supported");
+                    }
+
+                    GenerateEnrichmentExpressions(new List<Type>(), expressions, castedRoot, type, dictionary, addToDictionary, elvisOperator, topLevelOnly);
+
+                    if (expressions.Count > 0)
+                    {
+                        var block = LinqExpression.Block(new[] { castedRoot }, Helper.Collection.Enumerate(assignCastedRoot, expressions));
+                        var lambda = LinqExpression.Lambda<Action<object, IDictionary<string, object>>>(block, root, dictionary);
+                        enricher = lambda.Compile();
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                /// <summary>
+                /// Tries to generate a delegate that enriches a dictionary with log paramaters by <see cref="TraceableAttribute"/>(s) defined on the parameters for <paramref name="method"/>.
+                /// </summary>
+                /// <param name="method">The method whoes paramaters to generate the delegate</param>
+                /// <param name="enricher">The generated delegate if this method returns true</param>
+                /// <param name="conflictHandling">How conflicts should be handled when duplicate log parameters are used</param>
+                /// <param name="elvisOperator">If the generated expression should use the elvis operator when selecting the value (e.g. rootObject?.ParentProperty?.ChildProperty?.NestedChildProperty)</param>
+                /// <param name="topLevelOnly">If only <see cref="TraceableAttribute"/>(s) defined on <paramref name="method"/> and it's properties should be considered, set to false to go through the full hierarchy</param>
+                /// <returns></returns>
+                public static bool TryGenerateEnrichmentDelegate(MethodInfo method, out Action<object, object[], IDictionary<string, object>> enricher, TraceableConflictHandling conflictHandling = TraceableConflictHandling.UpdateIfDefault, bool elvisOperator = true, bool topLevelOnly = false)
+                {
+                    method = method.ValidateArgument(nameof(method));
+                    enricher = null;
+
+                    // Prepare expressions
+                    var methodInstanceType = method.ReflectedType ?? method.DeclaringType;
+                    var root = LinqExpression.Parameter(typeof(object), "instance");
+                    var castedRoot = LinqExpression.Variable(methodInstanceType, "castedRoot");
+                    var castRoot = LinqExpression.Assign(castedRoot, LinqExpression.Convert(root, methodInstanceType));
+                    var arguments = LinqExpression.Parameter(typeof(object[]), "arguments");
+                    var dictionary = LinqExpression.Parameter(typeof(IDictionary<string, object>), "dictionary");
+                    var expressions = new List<LinqExpression>();
+                    var variableExpressions = new List<ParameterExpression>();
+                    var assignVariableExpression = new List<LinqExpression>();
+
+                    MethodInfo addToDictionaryMethod;
+                    // Determine the method to call to add the value from the traceable attribute to the dictionary
+                    switch (conflictHandling)
+                    {
+                        case TraceableConflictHandling.Ignore:
+                            addToDictionaryMethod = Method.GetMethod(() => Sels.Core.Extensions.Collections.CollectionExtensions.AddIfMissing<string, object>(default, default, default));
+                            break;
+                        case TraceableConflictHandling.Update:
+                            addToDictionaryMethod = Method.GetMethod(() => Sels.Core.Extensions.Collections.CollectionExtensions.AddOrUpdate<string, object>(default, default, default));
+                            break;
+                        case TraceableConflictHandling.UpdateIfNull:
+                            addToDictionaryMethod = Method.GetMethod(() => Sels.Core.Extensions.Collections.CollectionExtensions.AddIfMissingOrNull<string, object>(default, default, default));
+                            break;
+                        case TraceableConflictHandling.UpdateIfDefault:
+                            addToDictionaryMethod = Method.GetMethod(() => Sels.Core.Extensions.Collections.CollectionExtensions.AddIfMissingOrDefault<string, object>(default, default, default));
+                            break;
+                        case TraceableConflictHandling.Exception:
+                            addToDictionaryMethod = Method.GetMethod<IDictionary<string, object>>(x => x.Add(default, default));
+                            break;
+                        default: throw new NotSupportedException($"Conflict handling mode <{conflictHandling}> is not supported");
+                    }
+
+                    void AddStaticExpressionToDictionary(LogParameterAttribute attribute)
+                    {
+                        // If method is static assume we are calling extension method
+                        var addToDictionary = addToDictionaryMethod.IsStatic ? LinqExpression.Call(addToDictionaryMethod, dictionary, LinqExpression.Constant(attribute.Name), LinqExpression.Constant(attribute.Value)) : LinqExpression.Call(dictionary, addToDictionaryMethod, LinqExpression.Constant(attribute.Name), LinqExpression.Constant(attribute.Value));
+                        expressions.Add(addToDictionary);
+                    }
+
+                    // Check method for attributes
+                    var methodAttributes = method.GetCustomAttributes<TraceableAttribute>().ToArray();
+                    foreach ( var attribute in methodAttributes)
+                    {
+                        var logParameter = attribute.GetLogParameterName(method);
+                        var getValueExpression = Property.GenerateGetValueExpression(castedRoot, method.ReflectedType, attribute.Path, elvisOperator);
+                        // Convert to object in case we have a value type
+                        getValueExpression = LinqExpression.Convert(getValueExpression, typeof(object));
+
+                        // If method is static assume we are calling extension method
+                        var addToDictionary = addToDictionaryMethod.IsStatic ? LinqExpression.Call(addToDictionaryMethod, dictionary, LinqExpression.Constant(logParameter), getValueExpression) : LinqExpression.Call(dictionary, addToDictionaryMethod, LinqExpression.Constant(logParameter), getValueExpression);
+                        expressions.Add(addToDictionary);
+                    }
+                    var methodLogParameterAttributes = method.GetCustomAttributes<LogParameterAttribute>().ToArray();
+                    foreach (var attribute in methodLogParameterAttributes)
+                    {
+                        AddStaticExpressionToDictionary(attribute);
+                    }
+
+                    // Check parameters for attributes
+                    var parameters = method.GetParameters();
+
+                    for (var i = 0; i < parameters.Length; i++)
+                    {
+                        var parameter = parameters[i];
+                        var parameterType = parameter.ParameterType;
+                        var castedParameter = LinqExpression.Variable(parameterType, $"castedParameter{i}");
+                        var assignCastedParameter = LinqExpression.Assign(castedParameter, LinqExpression.Convert(LinqExpression.ArrayIndex(arguments, LinqExpression.Constant(i)), parameterType));
+                        var currentCount = expressions.Count;
+
+                        // Check for attributes defined on the parameter itself
+                        foreach (var attribute in parameter.GetCustomAttributes<TraceableAttribute>())
+                        {
+                            var logParameter = attribute.GetLogParameterName(method, parameter);
+                            var getValueExpression = Property.GenerateGetValueExpression(castedParameter, parameterType, attribute.Path, elvisOperator);
+                            // Convert to object in case we have a value type
+                            getValueExpression = LinqExpression.Convert(getValueExpression, typeof(object));
+
+                            // If method is static assume we are calling extension method
+                            var addToDictionary = addToDictionaryMethod.IsStatic ? LinqExpression.Call(addToDictionaryMethod, dictionary, LinqExpression.Constant(logParameter), getValueExpression) : LinqExpression.Call(dictionary, addToDictionaryMethod, LinqExpression.Constant(logParameter), getValueExpression);
+                            expressions.Add(addToDictionary);
+                        }
+                        foreach(var attribute in parameter.GetCustomAttributes<LogParameterAttribute>())
+                        {
+                            AddStaticExpressionToDictionary(attribute);
+                        }
+
+                        
+                        if (!topLevelOnly) GenerateEnrichmentExpressions(new List<Type>(), expressions, castedParameter, parameterType, dictionary, addToDictionaryMethod, elvisOperator, topLevelOnly);
+
+                        if (expressions.Count > currentCount)
+                        {
+                            variableExpressions.Add(castedParameter);
+                            assignVariableExpression.Add(assignCastedParameter);
+                        }
+                    }
+
+                    // Check on instance
+                    GenerateEnrichmentExpressions(new List<Type>(), expressions, castedRoot, methodInstanceType, dictionary, addToDictionaryMethod, elvisOperator, topLevelOnly);
+
+                    if (expressions.Count > 0)
+                    {
+                        var block = LinqExpression.Block(Helper.Collection.Enumerate(castedRoot, variableExpressions).ToArray(), Helper.Collection.EnumerateAll(castRoot.AsEnumerable(), assignVariableExpression, expressions));
+                        var lambda = LinqExpression.Lambda<Action<object, object[], IDictionary<string, object>>>(block, root, arguments, dictionary);
+                        enricher = lambda.Compile();
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                private static void GenerateEnrichmentExpressions(List<Type> traversedTypes, List<LinqExpression> expressions, LinqExpression root, Type rootType, LinqExpression dictionary, MethodInfo addToDictionaryMethod, bool elvisOperator = true, bool topLevelOnly = false)
+                {
+                    traversedTypes = traversedTypes.ValidateArgument(nameof(traversedTypes));
+                    expressions = expressions.ValidateArgument(nameof(expressions));
+                    root = root.ValidateArgument(nameof(root));
+                    rootType = rootType.ValidateArgument(nameof(rootType));
+                    dictionary = dictionary.ValidateArgument(nameof(dictionary));
+
+                    if (traversedTypes.Contains(rootType)) return;
+                    traversedTypes.Add(rootType);
+
+                    void AddExpressionToDictionary(LinqExpression getValueExpression, string logParameter)
+                    {
+                        // Convert to object in case we have a value type
+                        getValueExpression = LinqExpression.Convert(getValueExpression, typeof(object));
+
+                        // If method is static assume we are calling extension method
+                        var addToDictionary = addToDictionaryMethod.IsStatic ? LinqExpression.Call(addToDictionaryMethod, dictionary, LinqExpression.Constant(logParameter), getValueExpression) : LinqExpression.Call(dictionary, addToDictionaryMethod, LinqExpression.Constant(logParameter), getValueExpression);
+                        expressions.Add(addToDictionary);
+                    }
+
+                    void AddStaticExpressionToDictionary(LogParameterAttribute attribute)
+                    {
+                        // If method is static assume we are calling extension method
+                        var addToDictionary = addToDictionaryMethod.IsStatic ? LinqExpression.Call(addToDictionaryMethod, dictionary, LinqExpression.Constant(attribute.Name), LinqExpression.Constant(attribute.Value)) : LinqExpression.Call(dictionary, addToDictionaryMethod, LinqExpression.Constant(attribute.Name), LinqExpression.Constant(attribute.Value));
+                        expressions.Add(addToDictionary);
+                    }
+
+                    // Check for attributes on the root type first
+                    var rootAttributes = rootType.GetCustomAttributes<TraceableAttribute>().ToArray();
+                    foreach (var attribute in rootAttributes)
+                    {
+                        var logParameter = attribute.GetLogParameterName(rootType);
+                        AddExpressionToDictionary(Property.GenerateGetValueExpression(root, rootType, attribute.Path, elvisOperator), logParameter);
+                    }
+                    var rootLogParameterAttributes = rootType.GetCustomAttributes<LogParameterAttribute>().ToArray();
+                    foreach (var attribute in rootLogParameterAttributes)
+                    {
+                        AddStaticExpressionToDictionary(attribute);
+                    }
+
+                    // Check for attributes on the properties of the root type
+                    foreach (var property in rootType.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(x => x.GetIndexParameters().Length == 0 && x.CanRead))
+                    {
+                        var propertyAttributes = property.GetCustomAttributes<TraceableAttribute>().ToArray();
+                        var propertyExpression = LinqExpression.Property(root, property);
+                        foreach (var attribute in propertyAttributes)
+                        {
+                            var logParameter = attribute.GetLogParameterName(property);
+                            AddExpressionToDictionary(Property.GenerateGetValueExpression(propertyExpression, property.PropertyType, attribute.Path, elvisOperator), logParameter);
+                        }
+                        var propertyLogParameterAttributes = property.GetCustomAttributes<LogParameterAttribute>().ToArray();
+                        foreach (var attribute in propertyLogParameterAttributes)
+                        {
+                            AddStaticExpressionToDictionary(attribute);
+                        }
+
+                        // Traverse hierarchy if top level only is disabled
+                        if (!topLevelOnly)
+                        {
+                            GenerateEnrichmentExpressions(traversedTypes, expressions, propertyExpression, property.PropertyType, dictionary, addToDictionaryMethod, elvisOperator, topLevelOnly);
+                        }
+                    }
+                }
+
             }
-            /// <summary>
-            /// Returns the method call expression extracted from <paramref name="methodExpression"/>
-            /// </summary>
-            /// <typeparam name="T">Type to select the method from</typeparam>
-            /// <param name="methodExpression">The expression that selects the method</param>
-            /// <returns>The MethodCallExpression in <paramref name="methodExpression"/></returns>
-            public static MethodCallExpression GetMethodCallExpression<T>(Expression<Action<T>> methodExpression)
-            {
-                methodExpression.ValidateArgument(nameof(methodExpression));
-
-                return methodExpression.ExtractMethodCall();
-            }
-            /// <summary>
-            /// Returns the method call expression extracted from <paramref name="methodExpression"/>
-            /// </summary>
-            /// <param name="methodExpression">The expression that selects the method</param>
-            /// <returns>The MethodCallExpression in <paramref name="methodExpression"/></returns>
-            public static MethodCallExpression GetMethodCallExpression(Expression<Func<object>> methodExpression)
-            {
-                methodExpression.ValidateArgument(nameof(methodExpression));
-
-                return methodExpression.ExtractMethodCall();
-            }
-            /// <summary>
-            /// Returns the method call expression extracted from <paramref name="methodExpression"/>
-            /// </summary>
-            /// <param name="methodExpression">The expression that selects the method</param>
-            /// <returns>The MethodCallExpression in <paramref name="methodExpression"/></returns>
-            public static MethodCallExpression GetMethodCallExpression(Expression<Action> methodExpression)
-            {
-                methodExpression.ValidateArgument(nameof(methodExpression));
-
-                return methodExpression.ExtractMethodCall();
-            }
 
             /// <summary>
-            /// Returns the method info extracted from <paramref name="propertyExpression"/>
+            /// Static helper methods for working with expression resolving around methods.
             /// </summary>
-            /// <typeparam name="T">Type to select the method from</typeparam>
-            /// <param name="propertyExpression">The expression that selects the method</param>
-            /// <returns>The MethodInfo in <paramref name="propertyExpression"/></returns>
-            public static PropertyInfo GetProperty<T>(Expression<Func<T, object>> propertyExpression)
+            public static class Method
             {
-                propertyExpression.ValidateArgument(nameof(propertyExpression));
+                /// <summary>
+                /// Returns the method info extracted from <paramref name="methodExpression"/>
+                /// </summary>
+                /// <typeparam name="T">Type to select the method from</typeparam>
+                /// <param name="methodExpression">The expression that selects the method</param>
+                /// <returns>The MethodInfo in <paramref name="methodExpression"/></returns>
+                public static MethodInfo GetMethod<T>(Expression<Func<T, object>> methodExpression)
+                {
+                    methodExpression.ValidateArgument(nameof(methodExpression));
 
-                if (!propertyExpression.TryExtractProperty(out var property)) throw new InvalidOperationException($"{nameof(propertyExpression)} does not point to a property");
-                return property;
+                    if (!methodExpression.TryExtractMethod(out var method)) throw new InvalidOperationException($"{nameof(methodExpression)} does not point to a method");
+                    return method;
+                }
+                /// <summary>
+                /// Returns the method info extracted from <paramref name="methodExpression"/>
+                /// </summary>
+                /// <typeparam name="T">Type to select the method from</typeparam>
+                /// <param name="methodExpression">The expression that selects the method</param>
+                /// <returns>The MethodInfo in <paramref name="methodExpression"/></returns>
+                public static MethodInfo GetMethod<T>(Expression<Action<T>> methodExpression)
+                {
+                    methodExpression.ValidateArgument(nameof(methodExpression));
+
+                    if (!methodExpression.TryExtractMethod(out var method)) throw new InvalidOperationException($"{nameof(methodExpression)} does not point to a method");
+                    return method;
+                }
+                /// <summary>
+                /// Returns the method info extracted from <paramref name="methodExpression"/>
+                /// </summary>
+                /// <param name="methodExpression">The expression that selects the method</param>
+                /// <returns>The MethodInfo in <paramref name="methodExpression"/></returns>
+                public static MethodInfo GetMethod(Expression<Func<object>> methodExpression)
+                {
+                    methodExpression.ValidateArgument(nameof(methodExpression));
+
+                    if (!methodExpression.TryExtractMethod(out var method)) throw new InvalidOperationException($"{nameof(methodExpression)} does not point to a method");
+                    return method;
+                }
+                /// <summary>
+                /// Returns the method info extracted from <paramref name="methodExpression"/>
+                /// </summary>
+                /// <param name="methodExpression">The expression that selects the method</param>
+                /// <returns>The MethodInfo in <paramref name="methodExpression"/></returns>
+                public static MethodInfo GetMethod(Expression<Action> methodExpression)
+                {
+                    methodExpression.ValidateArgument(nameof(methodExpression));
+
+                    if (!methodExpression.TryExtractMethod(out var method)) throw new InvalidOperationException($"{nameof(methodExpression)} does not point to a method");
+                    return method;
+                }
+
+                /// <summary>
+                /// Returns the method call expression extracted from <paramref name="methodExpression"/>
+                /// </summary>
+                /// <typeparam name="T">Type to select the method from</typeparam>
+                /// <param name="methodExpression">The expression that selects the method</param>
+                /// <returns>The MethodCallExpression in <paramref name="methodExpression"/></returns>
+                public static MethodCallExpression GetMethodCallExpression<T>(Expression<Func<T, object>> methodExpression)
+                {
+                    methodExpression.ValidateArgument(nameof(methodExpression));
+
+                    return methodExpression.ExtractMethodCall();
+                }
+                /// <summary>
+                /// Returns the method call expression extracted from <paramref name="methodExpression"/>
+                /// </summary>
+                /// <typeparam name="T">Type to select the method from</typeparam>
+                /// <param name="methodExpression">The expression that selects the method</param>
+                /// <returns>The MethodCallExpression in <paramref name="methodExpression"/></returns>
+                public static MethodCallExpression GetMethodCallExpression<T>(Expression<Action<T>> methodExpression)
+                {
+                    methodExpression.ValidateArgument(nameof(methodExpression));
+
+                    return methodExpression.ExtractMethodCall();
+                }
+                /// <summary>
+                /// Returns the method call expression extracted from <paramref name="methodExpression"/>
+                /// </summary>
+                /// <param name="methodExpression">The expression that selects the method</param>
+                /// <returns>The MethodCallExpression in <paramref name="methodExpression"/></returns>
+                public static MethodCallExpression GetMethodCallExpression(Expression<Func<object>> methodExpression)
+                {
+                    methodExpression.ValidateArgument(nameof(methodExpression));
+
+                    return methodExpression.ExtractMethodCall();
+                }
+                /// <summary>
+                /// Returns the method call expression extracted from <paramref name="methodExpression"/>
+                /// </summary>
+                /// <param name="methodExpression">The expression that selects the method</param>
+                /// <returns>The MethodCallExpression in <paramref name="methodExpression"/></returns>
+                public static MethodCallExpression GetMethodCallExpression(Expression<Action> methodExpression)
+                {
+                    methodExpression.ValidateArgument(nameof(methodExpression));
+
+                    return methodExpression.ExtractMethodCall();
+                }
             }
 
             /// <summary>
@@ -1152,6 +1411,20 @@ namespace Sels.Core
             /// </summary>
             public static class Property
             {
+                /// <summary>
+                /// Returns the method info extracted from <paramref name="propertyExpression"/>
+                /// </summary>
+                /// <typeparam name="T">Type to select the method from</typeparam>
+                /// <param name="propertyExpression">The expression that selects the method</param>
+                /// <returns>The MethodInfo in <paramref name="propertyExpression"/></returns>
+                public static PropertyInfo GetProperty<T>(Expression<Func<T, object>> propertyExpression)
+                {
+                    propertyExpression.ValidateArgument(nameof(propertyExpression));
+
+                    if (!propertyExpression.TryExtractProperty(out var property)) throw new InvalidOperationException($"{nameof(propertyExpression)} does not point to a property");
+                    return property;
+                }
+
                 /// <summary>
                 /// Validates that <paramref name="nestedProperties"/> are selected from root object of type <paramref name="expectedRoot"/>.
                 /// </summary>
@@ -1165,10 +1438,10 @@ namespace Sels.Core
 
                     PropertyInfo currentProperty = null;
 
-                    foreach(var property in nestedProperties)
+                    foreach (var property in nestedProperties)
                     {
-                        if(currentProperty == null)
-                        {                            
+                        if (currentProperty == null)
+                        {
                             if (!expectedRoot.IsAssignableTo(property.ReflectedType)) throw new InvalidDataException($"Expected property <{property.Name}> to be reflected from <{expectedRoot}> but was <{property.ReflectedType}>");
                         }
                         else
@@ -1177,6 +1450,52 @@ namespace Sels.Core
                         }
                         currentProperty = property;
                     }
+                }
+
+                /// <summary>
+                /// Generates an expression that returns the value of (nested) properties from <paramref name="root"/>.
+                /// </summary>
+                /// <param name="root">Expression containing the instance to select the (nested) properties from</param>
+                /// <param name="rootType">The type of the instance returned by <paramref name="root"/></param>
+                /// <param name="path">The path of (nested) properties to select from <paramref name="root"/>. Nested properties are defined by separating using '.'. When null, empty or whitespace <paramref name="root"/> will be returned</param>
+                /// <param name="useElvisOperator">If the generated expression should use the elvis operator when selecting the value (e.g. rootObject?.ParentProperty?.ChildProperty?.NestedChildProperty)</param>
+                /// <returns></returns>
+                public static LinqExpression GenerateGetValueExpression(LinqExpression root, Type rootType, string path, bool useElvisOperator = true)
+                {
+                    root = root.ValidateArgument(nameof(root));
+                    rootType = rootType.ValidateArgument(nameof(rootType));
+
+                    if (!path.HasValue()) return root;
+
+                    var properties = path.Split('.').Select(x => x.Trim()).ToArray();
+
+                    if (properties.Length <= 0) return root;
+
+                    // Go through hierarchy to get all properties
+                    var nestedProperties = new List<PropertyInfo>();
+                    var currentType = rootType;
+                    foreach (var propertyName in properties)
+                    {
+                        var property = currentType.GetProperty(propertyName);
+                        if (property == null) throw new InvalidOperationException($"Property <{propertyName}> does not exist on type <{currentType}>");
+
+                        nestedProperties.Add(property);
+                        currentType = property.PropertyType;
+                    }
+
+                    // Last property determines the return type
+                    var lastProperty = nestedProperties.Last();
+                    var defaultValue = LinqExpression.Constant(lastProperty.PropertyType.GetDefaultValue(), lastProperty.PropertyType);
+
+                    var currentExpression = root;
+                    foreach (var property in nestedProperties)
+                    {
+                        LinqExpression propertyExpression = LinqExpression.Property(currentExpression, property);
+                        if (useElvisOperator && !(property.ReflectedType ?? property.DeclaringType).IsValueType) propertyExpression = LinqExpression.Condition(LinqExpression.Equal(currentExpression, Default<object>.Expression), defaultValue, propertyExpression);
+                        currentExpression = propertyExpression;
+                    }
+
+                    return currentExpression;
                 }
             }
         }
@@ -1212,18 +1531,18 @@ namespace Sels.Core
                     // Try and set value
                     if (isLast)
                     {
-                        if(target == null)
+                        if (target == null)
                         {
                             ((JObject)current).Add(token, JToken.FromObject(value));
                         }
                         else
                         {
                             target.Replace(JToken.FromObject(value));
-                        }                       
+                        }
                     }
                     // Traverse json
                     else
-                    {                     
+                    {
                         if (target == null)
                         {
                             ((JObject)current).Add(token, new JObject());
@@ -1298,7 +1617,7 @@ namespace Sels.Core
             /// <returns>Task that will complete when either the time goes past <paramref name="sleepTime"/> or when <paramref name="token"/> gets cancelled</returns>
             public static async Task SleepUntil(DateTime sleepTime, CancellationToken token = default)
             {
-                while(DateTime.Now < sleepTime)
+                while (DateTime.Now < sleepTime)
                 {
                     if (token.IsCancellationRequested) return;
                     var waitTime = DateTime.Now - sleepTime;
@@ -1321,7 +1640,7 @@ namespace Sels.Core
                 _ = task.ValidateArgument(nameof(task));
 
                 // No need to wait here
-                if(maxWaitTime == TimeSpan.Zero)
+                if (maxWaitTime == TimeSpan.Zero)
                 {
                     await task.ConfigureAwait(false);
                     return;
@@ -1331,7 +1650,7 @@ namespace Sels.Core
                 var cancellationSource = new CancellationTokenSource();
 
                 // Use caller token to cancel our token. This should make the task throw TaskCanceledException instead of the timeout
-                using(token.Register(() =>
+                using (token.Register(() =>
                 {
                     cancellationSource.Cancel();
                     waitHandle.TrySetCanceled();
@@ -1392,7 +1711,8 @@ namespace Sels.Core
                 var cancellationSource = new CancellationTokenSource();
 
                 // Use caller token to cancel our token. This should make the task throw TaskCancelledException instead of the timeout
-                using (token.Register(() => {
+                using (token.Register(() =>
+                {
                     cancellationSource.Cancel();
                     waitHandle.TrySetCanceled();
                 }))
@@ -1487,7 +1807,8 @@ namespace Sels.Core
                 var cancellationSource = new CancellationTokenSource();
 
                 // Use caller token to cancel our token. 
-                using (token.Register(() => {
+                using (token.Register(() =>
+                {
                     cancellationSource.Cancel();
                     waitHandle.TrySetCanceled();
                 }))
@@ -1523,7 +1844,7 @@ namespace Sels.Core
 
                 if (token.IsCancellationRequested) return;
                 var taskSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                using(token.Register(() => taskSource.TrySetResult(true)))
+                using (token.Register(() => taskSource.TrySetResult(true)))
                 {
                     if (token.IsCancellationRequested) return;
                     await taskSource.Task.ConfigureAwait(false);
@@ -1752,7 +2073,7 @@ namespace Sels.Core
             {
                 maxNumberOfParitions.ValidateArgumentLargerOrEqual(nameof(maxNumberOfParitions), 0);
 
-                number = number == int.MinValue ? number+1 : number;
+                number = number == int.MinValue ? number + 1 : number;
 
                 return Math.Abs(number) % maxNumberOfParitions;
             }

@@ -6,6 +6,9 @@ using System;
 using Sels.Core.Extensions;
 using System.Linq;
 using System.Collections.Generic;
+using Sels.Core.Tracing;
+using Sels.Core.Extensions.Collections;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Sels.Core.ServiceBuilder.Interceptors
 {
@@ -22,6 +25,10 @@ namespace Sels.Core.ServiceBuilder.Interceptors
         /// Traces any thrown exceptions.
         /// </summary>
         IExceptionTracingInterceptorBuilder Exceptions { get; }
+        /// <summary>
+        /// Starts a logging scope for the selected method(s).
+        /// </summary>
+        IMethodLoggingScopeInterceptorBuilder WithScope { get; }
     }
 
     /// <summary>
@@ -201,5 +208,162 @@ namespace Sels.Core.ServiceBuilder.Interceptors
         /// <param name="logger">Delegate that logs the exceptions using the provided loggers</param>
         /// <returns>Current builder for method chaining</returns>
         IExceptionTracingInterceptorBuilder Using(Action<IInvocation, ILogger, LogLevel, Exception> logger);
+    }
+
+    /// <summary>
+    /// Builder for creating an interceptor that starts a logging scope for the selected method.
+    /// </summary>
+    public interface IMethodLoggingScopeInterceptorBuilder
+    {
+        /// <summary>
+        /// Starts a logging scope for all methods.
+        /// </summary>
+        IAllMethodLoggingScopeInterceptorBuilder ForAll { get; }
+        /// <summary>
+        /// Starts a logging scope for a few methods.
+        /// </summary>
+        ISpecificMethodLoggingScopeInterceptorBuilder For { get; }
+    }
+    /// <summary>
+    /// Builder for creating an interceptor that starts a logging scope for a few methods.
+    /// </summary>
+    public interface ISpecificMethodLoggingScopeInterceptorBuilder : IMethodLoggingScopeSharedInterceptorBuilder<ISpecificMethodLoggingScopeInterceptorBuilder>
+    {
+        /// <summary>
+        /// All methods matching <paramref name="condition"/> will be traced.
+        /// </summary>
+        /// <param name="condition">Delegate that dictates if a method should be traced</param>
+        /// <returns>Current builder for method chaining</returns>
+        ISpecificMethodLoggingScopeInterceptorBuilder Methods(Predicate<IInvocation> condition);
+        /// <summary>
+        /// <paramref name="method"/> will be traced.
+        /// </summary>
+        /// <param name="method">The method to trace</param>
+        /// <returns>Current builder for method chaining</returns>
+        ISpecificMethodLoggingScopeInterceptorBuilder Method(MethodInfo method) => Methods(x => x.Method.AreEqual(method.ValidateArgument(nameof(method))));
+        /// <summary>
+        /// Methods with <paramref name="methodname"/> will be traced.
+        /// </summary>
+        /// <param name="methodname">The name of the methods not to trace</param>
+        /// <returns>Current builder for method chaining</returns>
+        ISpecificMethodLoggingScopeInterceptorBuilder Method(string methodname) => Methods(x => x.Method.Name.Equals(methodname.ValidateArgumentNotNullOrWhitespace(methodname)));
+        /// <summary>
+        /// Methods with <paramref name="methodNames"/> will be traced.
+        /// </summary>
+        /// <param name="methodNames">The names of the methods to trace</param>
+        /// <returns>Current builder for method chaining</returns>
+        ISpecificMethodLoggingScopeInterceptorBuilder Methods(params string[] methodNames) => Methods(x => methodNames.ValidateArgument(nameof(methodNames)).Contains(x.Method.Name));
+    }
+    /// <summary>
+    /// Builder for creating an interceptor that starts a logging scope for all methods.
+    /// </summary>
+    public interface IAllMethodLoggingScopeInterceptorBuilder : IMethodLoggingScopeSharedInterceptorBuilder<IAllMethodLoggingScopeInterceptorBuilder>
+    {
+        /// <summary>
+        /// All methods matching <paramref name="condition"/> will not be traced.
+        /// </summary>
+        /// <param name="condition">Delegate that dictates if a method should not be traced</param>
+        /// <returns>Current builder for method chaining</returns>
+        IAllMethodLoggingScopeInterceptorBuilder Except(Predicate<IInvocation> condition);
+        /// <summary>
+        /// <paramref name="method"/> will not be traced.
+        /// </summary>
+        /// <param name="method">The method not to trace</param>
+        /// <returns>Current builder for method chaining</returns>
+        IAllMethodLoggingScopeInterceptorBuilder ExceptMethod(MethodInfo method) => Except(x => x.Method.AreEqual(method.ValidateArgument(nameof(method))));
+        /// <summary>
+        /// Methods with <paramref name="methodname"/> will not be traced.
+        /// </summary>
+        /// <param name="methodname">The name of the methods not to trace</param>
+        /// <returns>Current builder for method chaining</returns>
+        IAllMethodLoggingScopeInterceptorBuilder ExceptMethod(string methodname) => Except(x => x.Method.Name.Equals(methodname.ValidateArgumentNotNullOrWhitespace(methodname)));
+        /// <summary>
+        /// Methods with <paramref name="methodNames"/> will not be traced.
+        /// </summary>
+        /// <param name="methodNames">The names of the methods not to trace</param>
+        /// <returns>Current builder for method chaining</returns>
+        IAllMethodLoggingScopeInterceptorBuilder ExceptMethods(params string[] methodNames) => Except(x => methodNames.ValidateArgument(nameof(methodNames)).Contains(x.Method.Name));
+    }
+
+    /// <summary>
+    /// Builder for configuring extra options when starting a logging scope for methods.
+    /// </summary>
+    /// <typeparam name="TDerived">The type to return for the fluent syntax</typeparam>
+    public interface IMethodLoggingScopeSharedInterceptorBuilder<TDerived> where TDerived : IMethodLoggingScopeSharedInterceptorBuilder<TDerived>
+    {
+        /// <summary>
+        /// Returns the parent builder for defining more tracing configuration.
+        /// </summary>
+        ITracingInterceptorBuilder And { get; }
+
+        /// <summary>
+        /// The cache prefix that will be used when creating the key for the IMemoryCache. Used to store the generates expressions for the methods.
+        /// </summary>
+        /// <param name="prefix">The prefix to use</param>
+        /// <returns>Current builder for method chaining</returns>
+        TDerived WithCachePrefix(string prefix);
+        /// <summary>
+        /// Defines the cache options to use for the IMemoryCache when storing the generated expressions for the methods.
+        /// </summary>
+        /// <param name="options">DThe options to use</param>
+        /// <returns>Current builder for method chaining</returns>
+        TDerived WithCacheOptions(MemoryCacheEntryOptions options);
+        /// <summary>
+        /// Disables the enrichments that happends based on <see cref="TraceableAttribute"/>(s) defined on the method arguments.
+        /// </summary>
+        /// <returns>Current builder for method chaining</returns>
+        TDerived IgnoreAttributes();
+        /// <summary>
+        /// If only the <see cref="TraceableAttribute"/>(s) defined on the method arguments and it's properties. Hierarchy will not be traversed.
+        /// </summary>
+        /// <returns>Current builder for method chaining</returns>
+        TDerived TopLevelOnly();
+        /// <summary>
+        /// Overwrites the default conflict handling when gathering log parameters.
+        /// The default is <see cref="TraceableConflictHandling.UpdateIfDefault"/>.
+        /// </summary>
+        /// <param name="conflictHandling">The conflict handling to use</param>
+        /// <returns>Current builder for method chaining</returns>
+        TDerived WithConflictHandling(TraceableConflictHandling conflictHandling);
+        /// <summary>
+        /// Defines a log parameter that will be used when starting the logging scope.
+        /// Value will always override log parameters enriched from the <see cref="TraceableAttribute"/>(s) defined on the method arguments and it's properties.
+        /// </summary>
+        /// <param name="name">The name of the log parameter</param>
+        /// <param name="value">The value for the log parameter</param>
+        /// <returns>Current builder for method chaining</returns>
+        TDerived WithParameter(string name, object value)
+        {
+            name.ValidateArgumentNotNullOrWhitespace(nameof(name));
+            return WithParameter((l, m, i) => l.AddOrUpdate(name, value));
+        }
+        /// <summary>
+        /// Registers a delegate that can be used to add log parameters to the logging scope.
+        /// </summary>
+        /// <param name="action">Delegate that will be called to enrich the log parameters</param>
+        /// <returns>Current builder for method chaining</returns>
+        TDerived WithParameter(Action<IDictionary<string, object>, MethodInfo, IInvocation> action);
+        /// <summary>
+        /// Registers a delegate that can be used to add log parameters to the logging scope.
+        /// </summary>
+        /// <param name="action">Delegate that will be called to enrich the log parameters</param>
+        /// <returns>Current builder for method chaining</returns>
+        TDerived WithParameter(Action<IDictionary<string, object>, MethodInfo> action)
+        {
+            action = action.ValidateArgument(nameof(action));
+
+            return WithParameter((l, m, i) => action(l, m));
+        }
+        /// <summary>
+        /// Registers a delegate that can be used to add log parameters to the logging scope.
+        /// </summary>
+        /// <param name="action">Delegate that will be called to enrich the log parameters</param>
+        /// <returns>Current builder for method chaining</returns>
+        TDerived WithParameter(Action<IDictionary<string, object>> action)
+        {
+            action = action.ValidateArgument(nameof(action));
+
+            return WithParameter((l, m, i) => action(l));
+        }
     }
 }
