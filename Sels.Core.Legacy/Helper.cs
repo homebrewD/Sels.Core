@@ -2056,7 +2056,6 @@ namespace Sels.Core
         }
         #endregion
 
-
         #region Bucket
         /// <summary>
         /// Contains helper methods for assigning paritions to objects.

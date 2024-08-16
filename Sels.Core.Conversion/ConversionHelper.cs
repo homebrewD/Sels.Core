@@ -72,7 +72,7 @@ namespace Sels.Core.Conversion
             var convertMethod = Helper.Expressions.Method.GetMethod<ITypeConverter>(x => x.ConvertTo(null, null, null));
 
             var expressions = new List<System.Linq.Expressions.Expression>();
-            foreach(var property in properties)
+            foreach (var property in properties)
             {
                 var targetProperty = typeof(TTarget).GetProperty(property.Name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
 
@@ -81,24 +81,25 @@ namespace Sels.Core.Conversion
                 var sourcePropertyExpression = System.Linq.Expressions.Expression.Property(sourceParameterExpression, property);
                 var targetPropertyExpression = System.Linq.Expressions.Expression.Property(targetParameterExpression, targetProperty);
 
-                System.Linq.Expressions.Expression convertExpression = null;
-
+                System.Linq.Expressions.Expression conditionExpression = null;
+                System.Linq.Expressions.Expression convertToExpression = null;
+                var defaultExpression = System.Linq.Expressions.Expression.Default(targetProperty.PropertyType);
                 if (forceConversion)
                 {
-                    convertExpression = System.Linq.Expressions.Expression.Call(typeConverterParameterExpression, convertMethod, System.Linq.Expressions.Expression.Convert(sourcePropertyExpression, typeof(object)), System.Linq.Expressions.Expression.Constant(targetProperty.PropertyType), conversionArgumentsParameterExpression);
+                    conditionExpression = System.Linq.Expressions.Expression.NotEqual(sourcePropertyExpression, System.Linq.Expressions.Expression.Constant(null));
+                    convertToExpression = System.Linq.Expressions.Expression.Call(typeConverterParameterExpression, convertMethod, System.Linq.Expressions.Expression.Convert(sourcePropertyExpression, typeof(object)), System.Linq.Expressions.Expression.Constant(targetProperty.PropertyType), conversionArgumentsParameterExpression);
                 }
                 else
                 {
-                    var canConvertExpression = System.Linq.Expressions.Expression.Call(typeConverterParameterExpression, canConvertMethod, System.Linq.Expressions.Expression.Convert(sourcePropertyExpression, typeof(object)), System.Linq.Expressions.Expression.Constant(targetProperty.PropertyType), conversionArgumentsParameterExpression);
-                    var convertToExpression = System.Linq.Expressions.Expression.Call(typeConverterParameterExpression, convertMethod, System.Linq.Expressions.Expression.Convert(sourcePropertyExpression, typeof(object)), System.Linq.Expressions.Expression.Constant(targetProperty.PropertyType), conversionArgumentsParameterExpression);
-                    var defaultExpression = System.Linq.Expressions.Expression.Default(targetProperty.PropertyType);
-                    convertExpression = System.Linq.Expressions.Expression.IfThenElse(canConvertExpression, convertToExpression, defaultExpression);
+                    conditionExpression = System.Linq.Expressions.Expression.Call(typeConverterParameterExpression, canConvertMethod, System.Linq.Expressions.Expression.Convert(sourcePropertyExpression, typeof(object)), System.Linq.Expressions.Expression.Constant(targetProperty.PropertyType), conversionArgumentsParameterExpression);
+                    convertToExpression = System.Linq.Expressions.Expression.Call(typeConverterParameterExpression, convertMethod, System.Linq.Expressions.Expression.Convert(sourcePropertyExpression, typeof(object)), System.Linq.Expressions.Expression.Constant(targetProperty.PropertyType), conversionArgumentsParameterExpression);
                 }
 
-                var castExpression = System.Linq.Expressions.Expression.Convert(convertExpression, targetProperty.PropertyType);
-                var assignmentExpression = System.Linq.Expressions.Expression.Assign(targetPropertyExpression, castExpression);
+                var castExpression = System.Linq.Expressions.Expression.Convert(convertToExpression, targetProperty.PropertyType);
+                var convertExpression = System.Linq.Expressions.Expression.Condition(conditionExpression, castExpression, defaultExpression);
+                var assignmentExpression = System.Linq.Expressions.Expression.Assign(targetPropertyExpression, convertExpression);
                 expressions.Add(assignmentExpression);
-            }   
+            }
 
             var blockExpression = System.Linq.Expressions.Expression.Block(expressions);
             var lambda = System.Linq.Expressions.Expression.Lambda<Action<ITypeConverter, IReadOnlyDictionary<string, object>, TSource, TTarget>>(blockExpression, typeConverterParameterExpression, conversionArgumentsParameterExpression, sourceParameterExpression, targetParameterExpression);
