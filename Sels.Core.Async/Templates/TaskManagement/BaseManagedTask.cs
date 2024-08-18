@@ -15,7 +15,7 @@ namespace Sels.Core.Async.TaskManagement
     /// <summary>
     /// Base class for creating managed task wrappers.
     /// </summary>
-    public abstract class BaseManagedTask : IManagedAnonymousTask, IAsyncDisposable
+    public abstract class BaseManagedTask : IManagedAnonymousTask
     {
         // Fields
         private readonly TimeSpan _maxCancelTime;
@@ -180,8 +180,10 @@ namespace Sels.Core.Async.TaskManagement
         /// </summary>
         protected abstract Task TriggerContinuations();
         
-        /// <inheritdoc/>
-        public ValueTask DisposeAsync()
+        /// <summary>
+        /// Releases any managed resources.
+        /// </summary>
+        public void Cleanup()
         {
             lock (_cancellationSource)
             {
@@ -199,7 +201,9 @@ namespace Sels.Core.Async.TaskManagement
                 _deadlockTimer?.Dispose();
             }
 
-            return _cancellationRegistration.DisposeAsync();
+            _cancellationRegistration.Dispose();
         }
+        /// <inheritdoc/>
+        public void Dispose() => Cancel();
     }
 }

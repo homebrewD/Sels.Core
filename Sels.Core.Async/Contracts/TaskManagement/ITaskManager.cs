@@ -67,22 +67,25 @@ namespace Sels.Core.Async.TaskManagement
         /// </summary>
         /// <param name="delay">How much to delay the scheduling by</param>
         /// <param name="schedulerAction">Delegate used to create the managed task to schedule</param>
+        /// <param name="cascadeCancellation">If the task should be cancelled if it was already scheduled when the current instance is cancelled/disposed</param>
         /// <returns><inheritdoc cref="IDelayedPendingTask{T}"/></returns>
-        IDelayedPendingTask<IManagedTask> ScheduleDelayed(TimeSpan delay, Func<ITaskManager, CancellationToken, Task<IManagedTask>> schedulerAction);
+        IDelayedPendingTask<IManagedTask> ScheduleDelayed(TimeSpan delay, Func<ITaskManager, CancellationToken, Task<IManagedTask>> schedulerAction, bool cascadeCancellation = false);
         /// <summary>
         /// Uses <paramref name="schedulerAction"/> to create the task to schedule after a delay of <paramref name="delay"/>.
         /// </summary>
         /// <param name="delay">How much to delay the scheduling by</param>
         /// <param name="schedulerAction">Delegate used to create the managed task to schedule</param>
+        /// <param name="cascadeCancellation">If the task should be cancelled if it was already scheduled when the current instance is cancelled/disposed</param>
         /// <returns><inheritdoc cref="IDelayedPendingTask{T}"/></returns>
-        IDelayedPendingTask<IManagedTask> ScheduleDelayed(TimeSpan delay, Func<ITaskManager, CancellationToken, IManagedTask> schedulerAction);
+        IDelayedPendingTask<IManagedTask> ScheduleDelayed(TimeSpan delay, Func<ITaskManager, CancellationToken, IManagedTask> schedulerAction, bool cascadeCancellation = false);
         /// <summary>
         /// Uses <paramref name="schedulerAction"/> to create the task to schedule after a delay of <paramref name="delay"/>.
         /// </summary>
         /// <param name="delay">How much to delay the scheduling by</param>
         /// <param name="schedulerAction">Delegate used to create the managed task to schedule</param>
+        /// <param name="cascadeCancellation">If the task should be cancelled if it was already scheduled when the current instance is cancelled/disposed</param>
         /// <returns><inheritdoc cref="IDelayedPendingTask{T}"/></returns>
-        IDelayedPendingTask<IManagedAnonymousTask> ScheduleDelayed(TimeSpan delay, Func<ITaskManager, CancellationToken, IManagedAnonymousTask> schedulerAction);
+        IDelayedPendingTask<IManagedAnonymousTask> ScheduleDelayed(TimeSpan delay, Func<ITaskManager, CancellationToken, IManagedAnonymousTask> schedulerAction, bool cascadeCancellation = false);
 
         /// <summary>
         /// Creates a local queue tied to <paramref name="instance"/> that can be used to schedule throttled managed (anonymous) tasks.

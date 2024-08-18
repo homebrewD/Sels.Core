@@ -140,27 +140,27 @@ namespace Sels.Core.Async.TaskManagement
             }
         }
         /// <inheritdoc/>
-        public virtual IDelayedPendingTask<IManagedTask> ScheduleDelayed(TimeSpan delay, Func<ITaskManager, CancellationToken, Task<IManagedTask>> schedulerAction)
+        public virtual IDelayedPendingTask<IManagedTask> ScheduleDelayed(TimeSpan delay, Func<ITaskManager, CancellationToken, Task<IManagedTask>> schedulerAction, bool cascadeCancellation = false)
         {
             schedulerAction.ValidateArgument(nameof(schedulerAction));
 
             _logger.Log($"Scheduling new managed task with a delay of <{delay}>");
-            return new DelayedPendingManagedTask(schedulerAction, this, delay, _cancelSource.Token);
+            return new DelayedPendingManagedTask(schedulerAction, this, delay, cascadeCancellation, _cancelSource.Token);
         }
         /// <inheritdoc/>
-        public virtual IDelayedPendingTask<IManagedTask> ScheduleDelayed(TimeSpan delay, Func<ITaskManager, CancellationToken, IManagedTask> schedulerAction)
+        public virtual IDelayedPendingTask<IManagedTask> ScheduleDelayed(TimeSpan delay, Func<ITaskManager, CancellationToken, IManagedTask> schedulerAction, bool cascadeCancellation = false)
         {
             schedulerAction.ValidateArgument(nameof(schedulerAction));
             _logger.Log($"Scheduling new managed task with a delay of <{delay}>");
-            return new DelayedPendingManagedTask(schedulerAction, this, delay, _cancelSource.Token);
+            return new DelayedPendingManagedTask(schedulerAction, this, delay, cascadeCancellation, _cancelSource.Token);
         }
         /// <inheritdoc/>
-        public virtual IDelayedPendingTask<IManagedAnonymousTask> ScheduleDelayed(TimeSpan delay, Func<ITaskManager, CancellationToken, IManagedAnonymousTask> schedulerAction)
+        public virtual IDelayedPendingTask<IManagedAnonymousTask> ScheduleDelayed(TimeSpan delay, Func<ITaskManager, CancellationToken, IManagedAnonymousTask> schedulerAction, bool cascadeCancellation = false)
         {
             schedulerAction.ValidateArgument(nameof(schedulerAction));
 
             _logger.Log($"Scheduling new anonymous task with a delay of <{delay}>");
-            return new DelayedPendingAnonymousTask(schedulerAction, this, delay, _cancelSource.Token);
+            return new DelayedPendingAnonymousTask(schedulerAction, this, delay, cascadeCancellation, _cancelSource.Token);
         }
 
         /// <inheritdoc/>
@@ -498,6 +498,11 @@ namespace Sels.Core.Async.TaskManagement
                 cancellationToken.ThrowIfCancellationRequested();
                 partition.Add(task);
                 task.Start();
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    task.Cancel();
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
                 return task;
             }
         }
@@ -627,78 +632,89 @@ namespace Sels.Core.Async.TaskManagement
 
             ManagedTask existingTask = null;
 
-            while (!cancellationToken.IsCancellationRequested && existingTask == null)
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                if (isGlobal)
+                while (!cancellationToken.IsCancellationRequested && existingTask == null)
                 {
-                    var partition = GetGlobalTaskPartition(name);
+                    cancellationToken.ThrowIfCancellationRequested();
 
-                    lock (partition)
-                    {
-                        _ = partition.TryGetValue(name, out existingTask);
-                    }
-
-                }
-                else
-                {
-                    var owned = GetOrCreateOwned(owner);
-
-                    lock (owned)
-                    {
-                        existingTask = owned.Tasks.FirstOrDefault(x => name.EqualsNoCase(x.Name));
-                    }
-                }
-
-                if (existingTask == null)
-                {
-                    // Create new
-                    var task = new ManagedTask(owner, name, isGlobal, taskOptions, x => CompleteTask(x), _optionsMonitor.CurrentValue.DeadlockWaitTime, cancellationToken);
-
-                    // Store
                     if (isGlobal)
                     {
                         var partition = GetGlobalTaskPartition(name);
 
                         lock (partition)
                         {
-                            if (!partition.ContainsKey(name))
-                            {
-                                partition.Add(name, task);
-                                task.Start();
-                            }
-                            else
-                            {
-                                continue; // Race condition
-                            }
+                            _ = partition.TryGetValue(name, out existingTask);
                         }
+
                     }
                     else
                     {
                         var owned = GetOrCreateOwned(owner);
+
                         lock (owned)
                         {
-                            if (owned.Tasks.FirstOrDefault(x => name.EqualsNoCase(x.Name)) == null)
-                            {
-                                owned.Tasks.Add(task);
-                                task.Start();
-                            }
-                            else
-                            {
-                                continue; // Race condition
-                            }
+                            existingTask = owned.Tasks.FirstOrDefault(x => name.EqualsNoCase(x.Name));
                         }
                     }
 
-                    _logger.Debug($"Scheduled {task}");
-                    return (true, task);
+                    if (existingTask == null)
+                    {
+                        // Create new
+                        var task = new ManagedTask(owner, name, isGlobal, taskOptions, x => CompleteTask(x), _optionsMonitor.CurrentValue.DeadlockWaitTime, cancellationToken);
+
+                        // Store
+                        if (isGlobal)
+                        {
+                            var partition = GetGlobalTaskPartition(name);
+
+                            lock (partition)
+                            {
+                                if (!partition.ContainsKey(name))
+                                {
+                                    partition.Add(name, task);
+                                    task.Start();
+                                }
+                                else
+                                {
+                                    continue; // Race condition
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var owned = GetOrCreateOwned(owner);
+                            lock (owned)
+                            {
+                                if (owned.Tasks.FirstOrDefault(x => name.EqualsNoCase(x.Name)) == null)
+                                {
+                                    owned.Tasks.Add(task);
+                                    task.Start();
+                                }
+                                else
+                                {
+                                    continue; // Race condition
+                                }
+                            }
+                        }
+
+                        _logger.Debug($"Scheduled {task}");
+                        return (true, task);
+                    }
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                _logger.Warning($"Named task <{existingTask.Name}> already running");
+                return (false, existingTask);
+            }
+            finally
+            {
+                if(existingTask != null && cancellationToken.IsCancellationRequested)
+                {
+                    existingTask.Cancel();
+                    cancellationToken.ThrowIfCancellationRequested();
                 }
             }
-
-            cancellationToken.ThrowIfCancellationRequested();
-            _logger.Warning($"Named task <{existingTask.Name}> already running");
-            return (false, existingTask);
         }
 
         /// <summary>
@@ -706,49 +722,56 @@ namespace Sels.Core.Async.TaskManagement
         /// </summary>
         /// <param name="task">The task to finalize</param>
         /// <returns>Task that will complete when <paramref name="task"/> is finalized</returns>
-        protected virtual async void CompleteTask(ManagedAnonymousTask task)
+        protected virtual void CompleteTask(ManagedAnonymousTask task)
         {
             _logger.Debug($"Waiting for anonymous lock to finalize {task}");
 
             try
             {
-                await using var taskScope = task;
-                // Finalize task
-                var partition = GetPartition(task);
-                lock (partition)
+                try
                 {
-                    if (partition.Remove(task))
+                    // Finalize task
+                    var partition = GetPartition(task);
+                    lock (partition)
                     {
-                        _logger.Debug($"Finalized global {task}");
+                        if (partition.Remove(task))
+                        {
+                            _logger.Debug($"Finalized global {task}");
+                        }
+                        else
+                        {
+                            _logger.Warning($"Could not find {task}");
+                        }
                     }
-                    else
-                    {
-                        _logger.Warning($"Could not find {task}");
-                    }
-                }
 
-                // Check if restart is needed
-                if (!task.CancellationRequested)
-                {
-                    if (task.Options.HasFlag(ManagedTaskOptions.KeepAlive) && task.Result is Exception exception && !(exception is OperationCanceledException))
+                    // Check if restart is needed
+                    if (!task.CancellationRequested)
                     {
-                        _logger.LogException(LogLevel.Debug, $"{task} has keep alive enabled and failed with an exception. Restarting task", exception);
-                        ScheduleAnonymous(task.TaskOptions, task.Token);
-                    }
-                    else if (task.Options.HasFlag(ManagedTaskOptions.AutoRestart) && !(task.Result is Exception))
-                    {
-                        _logger.LogMessage(LogLevel.Debug, $"{task} has keep auto restart enabled and executed successfully. Restarting task");
-                        ScheduleAnonymous(task.TaskOptions, task.Token);
+                        if (task.Options.HasFlag(ManagedTaskOptions.KeepAlive) && task.Result is Exception exception && !(exception is OperationCanceledException))
+                        {
+                            _logger.LogException(LogLevel.Debug, $"{task} has keep alive enabled and failed with an exception. Restarting task", exception);
+                            ScheduleAnonymous(task.TaskOptions, task.Token);
+                        }
+                        else if (task.Options.HasFlag(ManagedTaskOptions.AutoRestart) && !(task.Result is Exception))
+                        {
+                            _logger.LogMessage(LogLevel.Debug, $"{task} has keep auto restart enabled and executed successfully. Restarting task");
+                            ScheduleAnonymous(task.TaskOptions, task.Token);
+                        }
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+                finally
+                {
+                    _logger.Log($"{task} created at <{task.CreatedDate}> was picked up by the Thread Pool at <{task.StartedDate}> running for <{task.Duration}> stopping at <{task.FinishedDate}>");
+                    task.Cleanup();
+                }
             }
-            catch (OperationCanceledException)
+            catch (Exception ex)
             {
-                return;
-            }
-            finally
-            {
-                _logger.Log($"{task} created at <{task.CreatedDate}> was picked up by the Thread Pool at <{task.StartedDate}> running for <{task.Duration}> stopping at <{task.FinishedDate}>");
+                _logger.LogException(LogLevel.Error, $"Something went wrong completing {task}", ex);
             }
         }
         /// <summary>
@@ -762,83 +785,90 @@ namespace Sels.Core.Async.TaskManagement
 
             try
             {
-                await using var taskScope = task;
-                // Finalize
-                if (task.IsGlobal)
+                try
                 {
-                    var partition = GetGlobalTaskPartition(task.Name);
-                    lock (partition)
+                    // Finalize
+                    if (task.IsGlobal)
                     {
-                        if (partition.Remove(task.Name))
+                        var partition = GetGlobalTaskPartition(task.Name);
+                        lock (partition)
                         {
-                            _logger.Debug($"Finalized {task}");
-                        }
-                        else
-                        {
-                            _logger.Warning($"Could not find {task}");
-                        }
-                    }
-                }
-                else
-                {
-                    var owner = task.Owner;
-                    var partition = GetPartition(owner);
-
-                    lock (partition)
-                    {
-                        if (partition.TryGetValue(owner, out var owned))
-                        {
-                            lock (owned)
+                            if (partition.Remove(task.Name))
                             {
-                                if (owned.Tasks.Remove(task))
-                                {
-                                    _logger.Debug($"Finalized {task}");
-
-                                    if (!owned.Tasks.HasValue() && !owned.Queues.HasValue())
-                                    {
-                                        _logger.Debug($"Nothing is owned anymore by <{owner}>. Removing from partition");
-                                        partition.Remove(owned.Owner);
-                                    }
-                                }
-                                else
-                                {
-                                    _logger.Warning($"Could not find {task}");
-                                }
+                                _logger.Debug($"Finalized {task}");
+                            }
+                            else
+                            {
+                                _logger.Warning($"Could not find {task}");
                             }
                         }
-                        else
+                    }
+                    else
+                    {
+                        var owner = task.Owner;
+                        var partition = GetPartition(owner);
+
+                        lock (partition)
                         {
-                            _logger.Warning($"Could not find owned tasks for owner <{owner}>");
+                            if (partition.TryGetValue(owner, out var owned))
+                            {
+                                lock (owned)
+                                {
+                                    if (owned.Tasks.Remove(task))
+                                    {
+                                        _logger.Debug($"Finalized {task}");
+
+                                        if (!owned.Tasks.HasValue() && !owned.Queues.HasValue())
+                                        {
+                                            _logger.Debug($"Nothing is owned anymore by <{owner}>. Removing from partition");
+                                            partition.Remove(owned.Owner);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        _logger.Warning($"Could not find {task}");
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                _logger.Warning($"Could not find owned tasks for owner <{owner}>");
+                            }
+                        }
+                    }
+
+                    // Check if restart is needed
+                    if (!task.CancellationRequested)
+                    {
+                        if (task.Options.HasFlag(ManagedTaskOptions.KeepAlive) && task.Result is Exception exception)
+                        {
+                            _logger.LogException(LogLevel.Debug, $"{task} has keep alive enabled and failed with an exception. Restarting task", exception);
+
+                            if (task.Name.HasValue()) await ScheduleNamed(task.Owner, task.Name, task.IsGlobal, task.TaskOptions, task.Token).ConfigureAwait(false);
+                            else ScheduleUnnamed(task.Owner, task.TaskOptions, task.Token);
+                        }
+                        else if (task.Options.HasFlag(ManagedTaskOptions.AutoRestart) && !(task.Result is Exception))
+                        {
+                            _logger.LogMessage(LogLevel.Debug, $"{task} has keep auto restart enabled and executed successfully. Restarting task");
+
+                            if (task.Name.HasValue()) await ScheduleNamed(task.Owner, task.Name, task.IsGlobal, task.TaskOptions, task.Token).ConfigureAwait(false);
+                            else ScheduleUnnamed(task.Owner, task.TaskOptions, task.Token);
                         }
                     }
                 }
-
-                // Check if restart is needed
-                if (!task.CancellationRequested)
+                catch (OperationCanceledException)
                 {
-                    if (task.Options.HasFlag(ManagedTaskOptions.KeepAlive) && task.Result is Exception exception)
-                    {
-                        _logger.LogException(LogLevel.Debug, $"{task} has keep alive enabled and failed with an exception. Restarting task", exception);
-
-                        if (task.Name.HasValue()) await ScheduleNamed(task.Owner, task.Name, task.IsGlobal, task.TaskOptions, task.Token).ConfigureAwait(false);
-                        else ScheduleUnnamed(task.Owner, task.TaskOptions, task.Token);
-                    }
-                    else if (task.Options.HasFlag(ManagedTaskOptions.AutoRestart) && !(task.Result is Exception))
-                    {
-                        _logger.LogMessage(LogLevel.Debug, $"{task} has keep auto restart enabled and executed successfully. Restarting task");
-
-                        if (task.Name.HasValue()) await ScheduleNamed(task.Owner, task.Name, task.IsGlobal, task.TaskOptions, task.Token).ConfigureAwait(false);
-                        else ScheduleUnnamed(task.Owner, task.TaskOptions, task.Token);
-                    }
+                    return;
+                }
+                finally
+                {
+                    _logger.Log($"{task} created at <{task.CreatedDate}> was picked up by the Thread Pool at <{task.StartedDate}> running for <{task.Duration}> stopping at <{task.FinishedDate}>");
+                    task.Cleanup();
                 }
             }
-            catch (OperationCanceledException)
+            catch (Exception ex)
             {
-                return;
-            }
-            finally
-            {
-                _logger.Log($"{task} created at <{task.CreatedDate}> was picked up by the Thread Pool at <{task.StartedDate}> running for <{task.Duration}> stopping at <{task.FinishedDate}>");
+                _logger.LogException(LogLevel.Error, $"Something went wrong completing {task}", ex);
             }
         }
 
@@ -982,6 +1012,8 @@ namespace Sels.Core.Async.TaskManagement
                     }
                 }
                 while (anyDisposed && stopwatch.Elapsed < _optionsMonitor.CurrentValue.MaxDisposeTime);
+
+                _cancelSource.Dispose();
             }
         }
 

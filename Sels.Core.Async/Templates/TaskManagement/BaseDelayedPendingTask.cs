@@ -26,6 +26,7 @@ namespace Sels.Core.Async.Templates.TaskManagement
         private readonly Func<ITaskManager, CancellationToken, Task<T>> _scheduleAction;
         private readonly CancellationTokenRegistration _registration;
         private readonly CancellationTokenSource _cancelSource = new CancellationTokenSource();
+        private readonly bool _cascadeCancel;
 
         // State
         private bool _isScheduling;
@@ -48,12 +49,14 @@ namespace Sels.Core.Async.Templates.TaskManagement
         /// <param name="scheduleAction">Delegate that schedules the pending task</param>
         /// <param name="taskManager">Task manager to use to schedule the pending task</param>
         /// <param name="delay">How long to delay the pending task by</param>
+        /// <param name="cascadeCancel">If the task should be cancelled if it was already scheduled when the current instance is cancelled/disposed</param>
         /// <param name="token">Token that can be used to cancel the pending task</param>
-        public BaseDelayedPendingTask(Func<ITaskManager, CancellationToken, Task<T>> scheduleAction, ITaskManager taskManager, TimeSpan delay, CancellationToken token)
+        public BaseDelayedPendingTask(Func<ITaskManager, CancellationToken, Task<T>> scheduleAction, ITaskManager taskManager, TimeSpan delay, bool cascadeCancel, CancellationToken token)
         {
             _scheduleAction = scheduleAction.ValidateArgument(nameof(scheduleAction));
             _taskManager = taskManager.ValidateArgument(nameof(taskManager));
             Delay = delay;
+            _cascadeCancel = cascadeCancel;
             _registration = token.Register(Cancel);
 
             _timer = new System.Timers.Timer();
@@ -95,11 +98,12 @@ namespace Sels.Core.Async.Templates.TaskManagement
                 }
 
                 // Schedule action
-                var task = await _scheduleAction(_taskManager, _cancelSource.Token);
+                var task = await _scheduleAction(_taskManager, _cancelSource.Token).ConfigureAwait(false);
 
                 lock (_lock)
                 {
                     _taskSource.TrySetResult(task);
+                    if (_cascadeCancel && IsCancelled) task.Cancel();
                 }
             }
             catch (OperationCanceledException)
@@ -150,6 +154,14 @@ namespace Sels.Core.Async.Templates.TaskManagement
                     if (!_isScheduling)
                     {
                         _taskSource.TrySetCanceled();
+                    }
+
+                    lock (_lock)
+                    {
+                        if (_cascadeCancel && Callback.IsCompleted && !Callback.IsCanceled)
+                        {
+                            Callback.Result.Cancel();
+                        }
                     }
                 }
             }

@@ -10,8 +10,9 @@ namespace Sels.Core.Async.TaskManagement
 {
     /// <summary>
     /// Represents an anonymous task that was scheduled using a <see cref="ITaskManager"/>.
+    /// Disposing will cancel the task.
     /// </summary>
-    public interface IManagedAnonymousTask
+    public interface IManagedAnonymousTask : IDisposable
     {
         /// <summary>
         /// The cancellation token used to cancel the current task.

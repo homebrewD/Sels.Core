@@ -8,6 +8,7 @@ namespace Sels.Core.Async.TaskManagement
 {
     /// <summary>
     /// Represents a managed (anonymous) task that still needs to be queued on the Thread Pool and executed.
+    /// Disposing will cancel the task.
     /// </summary>
     /// <typeparam name="T">The type of the pending task</typeparam>
     public interface IPendingTask<T> : IDisposable where T : IManagedAnonymousTask
@@ -25,7 +26,8 @@ namespace Sels.Core.Async.TaskManagement
         /// </summary>
         public bool IsCancelled { get; }
         /// <summary>
-        /// Cancels the pending task if it wasn't scheduled yet. Same as calling <see cref="IDisposable.Dispose"/>.
+        /// Cancels the pending task if it wasn't scheduled yet, otherwise cancels the managed task if cascade enabled.
+        /// Same as calling <see cref="IDisposable.Dispose"/>.
         /// </summary>
         public void Cancel();
 
