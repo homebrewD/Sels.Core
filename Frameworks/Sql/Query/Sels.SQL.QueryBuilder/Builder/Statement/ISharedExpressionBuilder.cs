@@ -8,6 +8,10 @@ using SqlParameterExpression = Sels.SQL.QueryBuilder.Builder.Expressions.Paramet
 using Sels.Core.Extensions;
 using Sels.Core.Extensions.Reflection;
 using Sels.Core.Models;
+using System.Collections.Generic;
+using Sels.Core;
+using Sels.Core.Extensions.Conversion;
+using System.Linq;
 namespace Sels.SQL.QueryBuilder.Builder.Statement
 {
     /// <summary>
@@ -36,6 +40,53 @@ namespace Sels.SQL.QueryBuilder.Builder.Statement
         /// <param name="sqlExpression">Delegate that adds the sql expression to the provided string builder</param>
         /// <returns>Builder for creating more expressions</returns>
         TReturn Expression(Action<StringBuilder, ExpressionCompileOptions> sqlExpression) => Expression(new DelegateExpression(sqlExpression.ValidateArgument(nameof(sqlExpression))));
+        /// <summary>
+        /// Adds an expression that consists of other expressions optionally joined together using a expression or object.
+        /// Useful for example adding a minus before another expression.
+        /// </summary>
+        /// <param name="joinValue">Optional object containing the value to join together <paramref name="expressions"/> with. Can be null or <see cref="IExpression"/></param>
+        /// <param name="expressions">Enumerator containing the expressions to join together</param>
+        /// <returns>Builder for creating more expressions</returns>
+        TReturn Expressions(object joinValue, IEnumerable<IExpression> expressions) => Expression(new ExpressionContainer(expressions, joinValue));       
+        /// <summary>
+        /// Adds an expression that consists of other expressions optionally joined together using a expression or object.
+        /// Useful for example adding a minus before another expression.
+        /// </summary>
+        /// <param name="joinValue">Optional object containing the value to join together the expressions. Can be null or <see cref="IExpression"/></param>
+        /// <param name="firstExpression">The first expression to join</param>
+        /// <param name="secondExpression">The second expression to join</param>
+        /// <param name="additionalExpressions">Any additional expressions to join</param>
+        /// <returns>Builder for creating more expressions</returns>
+        TReturn Expressions(object joinValue, object firstExpression, object secondExpression, params object[] additionalExpressions)
+        {           
+            var expressions = Helper.Collection.EnumerateAll(firstExpression.AsEnumerable(), secondExpression.AsEnumerable(), additionalExpressions).Where(x => x != null);
+
+            return Expression(new ExpressionContainer(expressions.Select(x => x is IExpression expression ? expression : new SqlConstantExpression(x)), joinValue));
+        }
+        /// <summary>
+        /// Adds an expression that consists of other expressions optionally joined together using a expression or object.
+        /// Useful for example adding a minus before another expression.
+        /// </summary>
+        /// <param name="joinValueBuilder">Optional builder that will create the expression to join with</param>
+        /// <param name="expressionBuilders">Enumerator containing the builders that will create the expressions to join with</param>
+        /// <returns>Builder for creating more expressions</returns>
+        TReturn Expressions(Action<ISharedExpressionBuilder<TEntity, Null>> joinValueBuilder, IEnumerable<Action<ISharedExpressionBuilder<TEntity, Null>>> expressionBuilders) => Expression(new ExpressionContainer(expressionBuilders != null ? expressionBuilders.Select(e => new ExpressionBuilder<TEntity>(e)) : null, joinValueBuilder != null ? new ExpressionBuilder<TEntity>(joinValueBuilder) : null));
+
+        /// <summary>
+        /// Adds an expression that consists of other expressions optionally joined together using a expression or object.
+        /// Useful for example adding a minus before another expression.
+        /// </summary>
+        /// <param name="joinValueBuilder">Optional builder that will create the expression to join with</param>
+        /// <param name="firstExpressionBuilder">Builder that will create the first expression to join</param>
+        /// <param name="secondExpressionBuilder">Builder that will create the second expression to join</param>
+        /// <param name="additionalExpressionsBuilders">Any additional builders that will create expressions to join</param>
+        /// <returns>Builder for creating more expressions</returns>
+        TReturn Expressions(Action<ISharedExpressionBuilder<TEntity, Null>> joinValueBuilder, Action<ISharedExpressionBuilder<TEntity, Null>> firstExpressionBuilder, Action<ISharedExpressionBuilder<TEntity, Null>> secondExpressionBuilder, params Action<ISharedExpressionBuilder<TEntity, Null>>[] additionalExpressionsBuilders)
+        {
+            var expressions = Helper.Collection.EnumerateAll(firstExpressionBuilder.AsEnumerable(), secondExpressionBuilder.AsEnumerable(), additionalExpressionsBuilders).Where(x => x != null);
+
+            return Expression(new ExpressionContainer(expressions.Select(x => new ExpressionBuilder<TEntity>(x)), joinValueBuilder != null ? new ExpressionBuilder<TEntity>(joinValueBuilder) : null));
+        }
         #endregion
 
         #region Column

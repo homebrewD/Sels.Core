@@ -20,11 +20,28 @@ namespace Sels.SQL.QueryBuilder.Expressions
         /// <summary>
         /// The inner expression for the current expression.
         /// </summary>
-        public List<IExpression> InnerExpressions { get;} = new List<IExpression>();
+        public List<IExpression> InnerExpressions { get; } = new List<IExpression>();
         /// <summary>
         /// The value used to join together <see cref="InnerExpressions"/>.
         /// </summary>
         public object JoinValue { get; set; } = Constants.Strings.Space;
+
+        /// <inheritdoc cref="ExpressionContainer"/>
+        public ExpressionContainer()
+        {
+        }
+
+        /// <inheritdoc cref="ExpressionContainer"/>
+        /// <param name="innerExpressions"><inheritdoc cref="InnerExpressions"/></param>
+        /// <param name="joinValue"><inheritdoc cref="JoinValue"/></param>
+        public ExpressionContainer(IEnumerable<IExpression> innerExpressions, object joinValue)
+        {
+            if(innerExpressions != null)
+            {
+                InnerExpressions.AddRange(innerExpressions);
+            }
+            JoinValue = joinValue;
+        }
 
         /// <inheritdoc/>
         public override void ToSql(StringBuilder builder, Action<StringBuilder, IExpression> subBuilder, ExpressionCompileOptions options = ExpressionCompileOptions.None)
@@ -36,7 +53,18 @@ namespace Sels.SQL.QueryBuilder.Expressions
             InnerExpressions.Execute((i, e) => {
                 subBuilder(builder, e);
 
-                if (i != InnerExpressions.Count - 1 && JoinValue != null) builder.Append(JoinValue);
+                if (i != InnerExpressions.Count - 1 && JoinValue != null)
+                {
+                    if(JoinValue is IExpression joinExpression)
+                    {
+
+                       subBuilder(builder, joinExpression);
+                    }
+                    else
+                    {
+                        builder.Append(JoinValue);
+                    }                    
+                }
             });
         }
     }

@@ -1280,7 +1280,9 @@ namespace Sels.Core
                     foreach (var property in rootType.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(x => x.GetIndexParameters().Length == 0 && x.CanRead))
                     {
                         var propertyAttributes = property.GetCustomAttributes<TraceableAttribute>().ToArray();
-                        var propertyExpression = LinqExpression.Property(root, property);
+                        LinqExpression propertyExpression = LinqExpression.Property(root, property);
+                        if (elvisOperator) propertyExpression = Property.GenerateGetValueExpression(root, rootType, property.Name, elvisOperator);
+
                         foreach (var attribute in propertyAttributes)
                         {
                             var logParameter = attribute.GetLogParameterName(property);
@@ -1295,6 +1297,7 @@ namespace Sels.Core
                         // Traverse hierarchy if top level only is disabled
                         if (!topLevelOnly)
                         {
+                             
                             GenerateEnrichmentExpressions(traversedTypes, expressions, propertyExpression, property.PropertyType, dictionary, addToDictionaryMethod, elvisOperator, topLevelOnly);
                         }
                     }
