@@ -454,5 +454,47 @@ namespace Sels.Core.Extensions.Linq
             return false;
         }
         #endregion
+
+        #region IndexOf
+        /// <summary>
+        /// Returns the index of the first item matching <paramref name="condition"/> in <paramref name="source"/>.
+        /// </summary>
+        /// <typeparam name="T">The type of the items to search</typeparam>
+        /// <param name="source">The enumerator containing the items to search</param>
+        /// <param name="condition">The condition that will be checked against the items returned by <paramref name="condition"/>. The index of the first matching will be returned</param>
+        /// <returns>The index of the first item matching <paramref name="condition"/> in <paramref name="source"/> or -1 if nothing matches</returns>
+        public static int IndexOf<T>(this IEnumerable<T> source, Predicate<T> condition)
+        {
+            source.ValidateArgument(nameof(source));
+            condition.ValidateArgument(nameof(condition));
+
+            var index = 0;
+            foreach (var item in source)
+            {
+                if (condition(item))
+                {
+                    return index;
+                }
+
+                index++;
+            }
+
+            return -1;
+        }
+
+        /// <summary>
+        /// The return the index of <paramref name="item"/> in <paramref name="source"/>. Uses <see cref="object.Equals(object)"/> to compare items.
+        /// </summary>
+        /// <typeparam name="T">The type of the items to search</typeparam>
+        /// <param name="source">The enumerator containing the items to search</param>
+        /// <param name="item">The item to get the index for</param>
+        /// <returns>The index of <paramref name="item"/> in <paramref name="source"/> or -1 if <paramref name="item"/> is not in <paramref name="source"/></returns>
+        public static int IndexOf<T>(this IEnumerable<T> source, T item)
+        {
+            source.ValidateArgument(nameof(source));
+
+            return source.IndexOf(x => x.Equals(item));
+        }
+        #endregion
     }
 }
