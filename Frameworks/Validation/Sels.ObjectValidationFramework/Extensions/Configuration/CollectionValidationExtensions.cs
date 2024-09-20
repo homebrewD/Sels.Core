@@ -6,6 +6,7 @@ using Sels.ObjectValidationFramework.Rules;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Xml.Linq;
 
 // Adjusted so extensions are available when using the ValidationProfile
 namespace Sels.ObjectValidationFramework.Profile
@@ -112,7 +113,7 @@ namespace Sels.ObjectValidationFramework.Profile
         /// <param name="count">How many elements the collection must contain</param>
         /// <param name="errorConstructor">Delegate that creates a validation error when <see cref="IValidationRuleContext{TEntity, TInfo, TContext, TValue}.Value"/> is not a valid value</param>
         /// <returns>Current configurator</returns>
-        public static IValidationRuleConfigurator<TEntity, TError, TBaseContext, TInfo, TTargetContext, TValue> MustContain<TEntity, TError, TBaseContext, TInfo, TTargetContext, TValue>(this IValidationTargetConfigurator<TEntity, TError, TBaseContext, TInfo, TTargetContext, TValue> configurator, int count, Func<IValidationRuleContext<TEntity, TInfo, TTargetContext, TValue>, TError> errorConstructor)
+        public static IValidationRuleConfigurator<TEntity, TError, TBaseContext, TInfo, TTargetContext, TValue> MustContainExactly<TEntity, TError, TBaseContext, TInfo, TTargetContext, TValue>(this IValidationTargetConfigurator<TEntity, TError, TBaseContext, TInfo, TTargetContext, TValue> configurator, int count, Func<IValidationRuleContext<TEntity, TInfo, TTargetContext, TValue>, TError> errorConstructor)
             where TTargetContext : TBaseContext
             where TValue : IEnumerable
         {
@@ -135,7 +136,7 @@ namespace Sels.ObjectValidationFramework.Profile
         /// <param name="count">How many elements the collection must contain</param>
 
         /// <returns>Current configurator</returns>
-        public static IValidationRuleConfigurator<TEntity, string, TBaseContext, TInfo, TTargetContext, TValue> MustContain<TEntity, TBaseContext, TInfo, TTargetContext, TValue>(this IValidationTargetConfigurator<TEntity, string, TBaseContext, TInfo, TTargetContext, TValue> configurator, int count)
+        public static IValidationRuleConfigurator<TEntity, string, TBaseContext, TInfo, TTargetContext, TValue> MustContainExactly<TEntity, TBaseContext, TInfo, TTargetContext, TValue>(this IValidationTargetConfigurator<TEntity, string, TBaseContext, TInfo, TTargetContext, TValue> configurator, int count)
             where TTargetContext : TBaseContext
             where TValue : IEnumerable
         {
@@ -377,6 +378,51 @@ namespace Sels.ObjectValidationFramework.Profile
             configurator.ValidateArgument(nameof(configurator));
 
             return configurator.ValidIf(info => info.Value.Enumerate().AreAllUnique(), info => $"Must all be unique");
+        }
+
+        /// <summary>
+        /// Value is only valid when all elements are unique. Values are compared using <see cref="object.Equals(object)"/>.
+        /// </summary>
+        /// <typeparam name="TEntity">Type of source object that the validation rule was created for</typeparam>
+        /// <typeparam name="TError">Type of validation error that this rule returns</typeparam>
+        /// <typeparam name="TInfo">Type of object that contains additional info that the validation rule can use depending on what is being validated</typeparam>
+        /// <typeparam name="TBaseContext">Type of the validation context used by the current validator</typeparam>
+        /// <typeparam name="TTargetContext">Type of the validation context used by the current validation target</typeparam>
+        /// <typeparam name="TValue">Type of value that is being validated</typeparam>
+        /// <typeparam name="TElement">The type of elements to compare</typeparam>
+        /// <param name="configurator">Configurator to configure validation</param>
+        /// <param name="comparer">The comparer to use when checking for equality</param>
+        /// <param name="errorConstructor">Delegate that creates a validation error when <see cref="IValidationRuleContext{TEntity, TInfo, TContext, TValue}.Value"/> is not a valid value</param>
+        /// <returns>Current configurator</returns>
+        public static IValidationRuleConfigurator<TEntity, TError, TBaseContext, TInfo, TTargetContext, TValue> AllMustBeUnique<TEntity, TError, TBaseContext, TInfo, TTargetContext, TValue, TElement>(this IValidationTargetConfigurator<TEntity, TError, TBaseContext, TInfo, TTargetContext, TValue> configurator, IEqualityComparer<TElement> comparer, Func<IValidationRuleContext<TEntity, TInfo, TTargetContext, TValue>, TError> errorConstructor)
+            where TTargetContext : TBaseContext
+            where TValue : IEnumerable<TElement>
+        {
+            configurator.ValidateArgument(nameof(configurator));
+            errorConstructor.ValidateArgument(nameof(errorConstructor));
+
+            return configurator.ValidIf(info => info.Value.AreAllUnique(comparer), errorConstructor);
+        }
+
+        /// <summary>
+        /// Value is only valid when all elements are unique. Values are compared using <see cref="object.Equals(object)"/>.
+        /// </summary>
+        /// <typeparam name="TEntity">Type of source object that the validation rule was created for</typeparam>
+        /// <typeparam name="TInfo">Type of object that contains additional info that the validation rule can use depending on what is being validated</typeparam>
+        /// <typeparam name="TBaseContext">Type of the validation context used by the current validator</typeparam>
+        /// <typeparam name="TTargetContext">Type of the validation context used by the current validation target</typeparam>
+        /// <typeparam name="TValue">Type of value that is being validated</typeparam>
+        /// <typeparam name="TElement">The type of elements to compare</typeparam>
+        /// <param name="configurator">Configurator to configure validation</param>
+        /// <param name="comparer">The comparer to use when checking for equality</param>
+        /// <returns>Current configurator</returns>
+        public static IValidationRuleConfigurator<TEntity, string, TBaseContext, TInfo, TTargetContext, TValue> AllMustBeUnique<TEntity, TBaseContext, TInfo, TTargetContext, TValue, TElement>(this IValidationTargetConfigurator<TEntity, string, TBaseContext, TInfo, TTargetContext, TValue> configurator, IEqualityComparer<TElement> comparer)
+            where TTargetContext : TBaseContext
+            where TValue : IEnumerable<TElement>
+        {
+            configurator.ValidateArgument(nameof(configurator));
+
+            return configurator.ValidIf(info => info.Value.AreAllUnique(comparer), info => $"Must all be unique");
         }
     }
 }

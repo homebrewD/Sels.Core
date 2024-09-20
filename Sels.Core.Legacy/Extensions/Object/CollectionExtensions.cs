@@ -1,4 +1,5 @@
-﻿using Sels.Core.Extensions.Conversion;
+﻿using Newtonsoft.Json.Linq;
+using Sels.Core.Extensions.Conversion;
 using Sels.Core.Extensions.Linq;
 using Sels.Core.Extensions.Reflection;
 using System;
@@ -72,63 +73,55 @@ namespace Sels.Core.Extensions.Collections
         /// </summary>
         /// <typeparam name="T">Collection element type</typeparam>
         /// <param name="collection">Collection to check</param>
+        /// <param name="comparer">Optional comparer used to compare objects</param>
         /// <returns>Boolean indicating if all elements in <paramref name="collection"/> are unique</returns>
-        public static bool AreAllUnique<T>(this IEnumerable<T> collection)
+        public static bool AreAllUnique<T>(this IEnumerable<T> collection, IEqualityComparer<T> comparer = null)
         {
             collection.ValidateArgument(nameof(collection));
 
-            foreach (var item in collection)
-            {
-                var occuranceAmount = 0;
-                foreach (var itemToCompare in collection)
-                {
-                    if (item.Equals(itemToCompare))
-                    {
-                        occuranceAmount++;
-                    }
-
-                    // Has to be 2 because an item counts itself at least once
-                    if (occuranceAmount > 1)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
+            return collection.AreAllUnique(x => x, comparer);
         }
+
 
         /// <summary>
         /// Checks if all element values selected by <paramref name="valueSelector"/> are unique in <paramref name="collection"/> by comparing with <see cref="object.Equals(object)"/>.
         /// </summary>
         /// <typeparam name="T">Collection element type</typeparam>
+        /// <typeparam name="TValue">The value to compare by</typeparam>
         /// <param name="collection">Collection to check</param>
         /// <param name="valueSelector">Func that selects the value from <typeparamref name="T"/> to compare</param>
+        /// <param name="comparer">Optional comparer used to compare objects</param>
         /// <returns>Boolean indicating if all elements in <paramref name="collection"/> are unique</returns>
-        public static bool AreAllUnique<T>(this IEnumerable<T> collection, Func<T, object> valueSelector)
+        public static bool AreAllUnique<T, TValue>(this IEnumerable<T> collection, Func<T, TValue> valueSelector, IEqualityComparer<TValue> comparer = null)
         {
             collection.ValidateArgument(nameof(collection));
             valueSelector.ValidateArgument(nameof(valueSelector));
+            
+            var hashSet = comparer != null ? new HashSet<TValue>(comparer) : new HashSet<TValue>();
+            var hasNull = false;
 
             foreach (var item in collection)
             {
-                var itemValue = valueSelector(item);
-
-                var occuranceAmount = 0;
-                foreach (var itemToCompare in collection)
+                if(item == null)
                 {
-                    var itemToCompareValue = valueSelector(itemToCompare);
+                    if (hasNull) return false;
+                    hasNull = true;
+                    continue;
+                }
+                var itemValue = valueSelector(item);
+                if(itemValue == null)
+                {
+                    if (hasNull) return false;
+                    hasNull = true;
+                    continue;
+                }
 
-                    if (itemValue.Equals(itemToCompareValue))
-                    {
-                        occuranceAmount++;
-                    }
+                var currentCount = hashSet.Count;
+                hashSet.Add(itemValue);
 
-                    // Has to be 2 because an item counts itself at least once
-                    if (occuranceAmount > 1)
-                    {
-                        return false;
-                    }
+                if(currentCount == hashSet.Count)
+                {
+                    return false;
                 }
             }
 
