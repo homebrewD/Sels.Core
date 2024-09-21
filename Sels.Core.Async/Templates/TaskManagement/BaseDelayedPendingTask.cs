@@ -26,6 +26,7 @@ namespace Sels.Core.Async.Templates.TaskManagement
         private readonly Func<ITaskManager, CancellationToken, Task<T>> _scheduleAction;
         private readonly CancellationTokenRegistration _registration;
         private readonly CancellationTokenSource _cancelSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cancelScheduledSource = new CancellationTokenSource();
         private readonly bool _cascadeCancel;
 
         // State
@@ -77,6 +78,8 @@ namespace Sels.Core.Async.Templates.TaskManagement
                     if (IsDisposed.HasValue) return;
                     // Cancel token
                     _cancelSource.Cancel();
+                    // Cascade cancel
+                    if(_cascadeCancel) _cancelScheduledSource.Cancel();
                 }
             }
             finally
@@ -94,11 +97,12 @@ namespace Sels.Core.Async.Templates.TaskManagement
                 {
                     if (IsDisposed.HasValue) return;
                     if (_cancelSource.IsCancellationRequested) return;
+                    if (_cancelScheduledSource.IsCancellationRequested) return;
                     _isScheduling = true;
                 }
 
                 // Schedule action
-                var task = await _scheduleAction(_taskManager, _cancelSource.Token).ConfigureAwait(false);
+                var task = await _scheduleAction(_taskManager, _cancelScheduledSource.Token).ConfigureAwait(false);
 
                 lock (_lock)
                 {
@@ -123,7 +127,7 @@ namespace Sels.Core.Async.Templates.TaskManagement
             }
             finally
             {
-                Dispose();
+                Cleanup();
             }
         }
 
@@ -138,6 +142,8 @@ namespace Sels.Core.Async.Templates.TaskManagement
                 if (IsDisposed.HasValue) return;
                 using (new ExecutedAction(x => IsDisposed = x))
                 {
+                    Cleanup();
+
                     // Dispose registration
                     _registration.Dispose();
 
@@ -145,15 +151,6 @@ namespace Sels.Core.Async.Templates.TaskManagement
                     lock (_lock)
                     {
                         _cancelSource.Dispose();
-                    }
-
-                    // Dispose timer
-                    _timer.Dispose();
-
-                    // Complete callback task if not already
-                    if (!_isScheduling)
-                    {
-                        _taskSource.TrySetCanceled();
                     }
 
                     lock (_lock)
@@ -164,6 +161,23 @@ namespace Sels.Core.Async.Templates.TaskManagement
                         }
                     }
                 }
+            }
+        }
+
+        private void Cleanup()
+        {
+            // Dispose timer
+            _timer.Dispose();
+
+            // Complete callback task if not already
+            if (!_isScheduling)
+            {
+                _taskSource.TrySetCanceled();
+            }
+
+            lock (_lock)
+            {
+                _cancelScheduledSource.Dispose();
             }
         }
     }

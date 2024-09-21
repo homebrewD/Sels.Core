@@ -73,7 +73,7 @@ namespace Sels.Core.Async.TaskManagement
             }
             else
             {
-                return taskManager.ScheduleDelayed(interval, (m, t) => m.ScheduleActionAsync(owner, name, isGlobal, recurringAction, options, token), true);
+                return taskManager.ScheduleDelayed(interval, (m, t) => m.ScheduleActionAsync(owner, name, isGlobal, recurringAction, options, t), true);
             }
         }
     }
