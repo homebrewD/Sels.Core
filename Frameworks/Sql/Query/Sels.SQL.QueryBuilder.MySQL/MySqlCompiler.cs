@@ -382,9 +382,11 @@ namespace Sels.SQL.QueryBuilder.MySQL
                     {
                         if(expressions.Any(x => x is IObjectExpression || x is TableExpression))
                         {
+                            _logger.Debug($"{_name}: Delete statement contains expressions with data sets. Checking if multiple aliases are defined");
+
                             var aliases = expressions.Where(x => x is IObjectExpression || x is TableExpression)
                                                         .Select(x => ConvertDataSet(x is TableExpression tableExpression ? tableExpression.Alias?.Set : x.CastTo<IObjectExpression>().Set, compilerOptions))
-                                                        .Where(x => x != null).ToArray();
+                                                        .Where(x => x != null).Distinct().ToArray();
 
                             if (aliases.HasValue())
                             {
@@ -729,7 +731,7 @@ namespace Sels.SQL.QueryBuilder.MySQL
             public MySqlCompilerOptions(Action<ICompilerOptions> configurator)
             {
                 // Set defaults
-                SetDataSetConverter(x => x.ToString());
+                SetDataSetConverter(x => x?.ToString());
 
                 // Configure
                 configurator?.Invoke(this);

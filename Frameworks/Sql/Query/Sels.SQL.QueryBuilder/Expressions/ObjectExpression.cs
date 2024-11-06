@@ -25,7 +25,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Expressions
             var dataSet = Set != null ? datasetConverterer(Set) : null;
             var objectName = (objectConverter != null ? objectConverter(Object) : Object) ?? throw new InvalidOperationException($"{nameof(datasetConverterer)} returned null as the object name");
 
-            if (dataSet != null) builder.Append(dataSet).Append('.');
+            if (dataSet.HasValue()) builder.Append(dataSet).Append('.');
             builder.Append(objectName);
         }
     }

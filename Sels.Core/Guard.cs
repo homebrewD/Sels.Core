@@ -71,6 +71,26 @@ namespace Sels.Core
             return argument;
         }
 
+        /// <summary>
+        /// Validates that <paramref name="argument"/> is not null and passes <paramref name="condition"/>, if it is null or fails the condition a <see cref="ArgumentNullException"/> or <see cref="ArgumentException"/> will be thrown.
+        /// </summary>
+        /// <typeparam name="T">Type of the argument to check</typeparam>
+        /// <param name="argument">The argument instance to check</param>
+        /// <param name="condition">The predicate that checks if <paramref name="argument"/> is valid</param>
+        /// <param name="expression">The expression of the argument being checked. Compiler will fill it out automatically so no need to provide it</param>
+        /// <returns><paramref name="argument"/></returns>
+        [return: NotNull]
+        public static T IsNotNullAnd<T>(T argument, Expression<Predicate<T>> condition, [CallerArgumentExpression("argument")] string expression = "")
+        {
+            condition.ValidateArgument(nameof(condition));
+            if (string.IsNullOrWhiteSpace(expression)) throw new ArgumentException($"{nameof(expression)} cannot be null, empty or whitespace");
+
+            argument = IsNotNull(argument, expression);
+            argument = Is(argument, condition, expression);
+
+            return argument!;
+        }
+
         #region String
         /// <summary>
         /// Validates that <paramref name="argument"/> is not null or empty, if it is an <see cref="ArgumentException"/> will be thrown.

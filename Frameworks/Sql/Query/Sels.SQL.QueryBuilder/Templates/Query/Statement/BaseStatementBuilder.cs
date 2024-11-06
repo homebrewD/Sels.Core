@@ -64,15 +64,12 @@ namespace Sels.SQL.QueryBuilder.Builder.Statement
         public void SetAlias(Type type, string alias)
         {
             type.ValidateArgument(nameof(type));
-            alias.ValidateArgument(nameof(alias));
 
             _aliases.AddOrUpdate(type, alias);
         }
         /// <inheritdoc/>
         public TDerived AliasFor<T>(string tableAlias)
         {
-            tableAlias.ValidateArgument(nameof(tableAlias));
-
             _aliases.AddOrUpdate(typeof(T), tableAlias);
             return Instance;
         }
@@ -108,7 +105,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Statement
                 var alias = type.Name[0].ToString();
 
                 var counter = 1;
-                while(_aliases.Any(x => x.Value.Equals(alias, StringComparison.OrdinalIgnoreCase)))
+                while(_aliases.Any(x => x.Value != null && x.Value.Equals(alias, StringComparison.OrdinalIgnoreCase)))
                 {
                     alias = alias + counter;
                     counter++;
