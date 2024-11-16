@@ -33,7 +33,7 @@ namespace Sels.SQL.QueryBuilder.Builder.Statement
         /// </summary>
         /// <param name="sqlExpression">String containing the sql expression</param>
         /// <returns>Builder for creating more expressions</returns>
-        TReturn Expression(string sqlExpression) => Expression(new RawExpression(sqlExpression.ValidateArgumentNotNullOrEmpty(sqlExpression)));
+        TReturn Expression(string sqlExpression) => Expression(new RawExpression(sqlExpression == null ? string.Empty : sqlExpression));
         /// <summary>
         /// Adds a sql expression to the builder.
         /// </summary>
