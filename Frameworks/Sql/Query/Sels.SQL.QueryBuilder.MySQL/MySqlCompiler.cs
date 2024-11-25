@@ -47,10 +47,10 @@ namespace Sels.SQL.QueryBuilder.MySQL
             { SelectExpressionPositions.Column, (false, null, Constants.Strings.Comma, false) },
             { SelectExpressionPositions.From, (true, Sql.Clauses.From, null, true) },
             { SelectExpressionPositions.Join, (true, null, Environment.NewLine, false) },
-            { SelectExpressionPositions.Where, (true, Sql.Clauses.Where, Constants.Strings.Comma + Sql.LogicOperators.And, false) },
+            { SelectExpressionPositions.Where, (true, Sql.Clauses.Where, Constants.Strings.Space + Sql.LogicOperators.And + Constants.Strings.Space, false) },
             { SelectExpressionPositions.OrderBy, (true, Sql.Clauses.OrderBy, Constants.Strings.Comma, false) },
             { SelectExpressionPositions.GroupBy, (true, Sql.Clauses.GroupBy, Constants.Strings.Comma, false) },
-            { SelectExpressionPositions.Having, (true, Sql.Clauses.Having, Constants.Strings.Comma + Sql.LogicOperators.And, false) },
+            { SelectExpressionPositions.Having, (true, Sql.Clauses.Having, Constants.Strings.Space + Sql.LogicOperators.And + Constants.Strings.Space, false) },
             { SelectExpressionPositions.After, (true, null, Environment.NewLine, false) },
         };
         private static readonly IReadOnlyDictionary<UpdateExpressionPositions, (bool IsNewLine, string Prefix, string[] ExpressionJoinValues, string Suffix, bool IsSingleExpression)> _updatePositionConfigs = new Dictionary<UpdateExpressionPositions, (bool IsNewLine, string Prefix, string[] ExpressionJoinValues, string Suffix, bool IsSingleExpression)>()
@@ -59,13 +59,13 @@ namespace Sels.SQL.QueryBuilder.MySQL
             { UpdateExpressionPositions.Join, (true, null, new string[] {  Environment.NewLine}, null, false) },
             { UpdateExpressionPositions.OrderBy, (true, Sql.Clauses.OrderBy, new string[]{ Constants.Strings.Comma }, null, false) },
             { UpdateExpressionPositions.Set, (true, Sql.Clauses.Set + Constants.Strings.Space, new string[] { Constants.Strings.Comma ,Environment.NewLine }, null, false) },
-            { UpdateExpressionPositions.Where, (true, Sql.Clauses.Where + Constants.Strings.Space, new string[] { Constants.Strings.Comma, Sql.LogicOperators.And }, null, false) }
+            { UpdateExpressionPositions.Where, (true, Sql.Clauses.Where + Constants.Strings.Space, new string[] { Constants.Strings.Space, Sql.LogicOperators.And, Constants.Strings.Space }, null, false) }
         };
         private static readonly IReadOnlyDictionary<DeleteExpressionPositions, (bool IsNewLine, string Clause, string ExpressionJoinValue, bool IsSingleExpression)> _deletePositionConfigs = new Dictionary<DeleteExpressionPositions, (bool IsNewLine, string Clause, string ExpressionJoinValue, bool IsSingleExpression)>()
         {
             { DeleteExpressionPositions.From, (true, Sql.Clauses.From, Constants.Strings.Comma, false) },
             { DeleteExpressionPositions.Join, (true, null, Environment.NewLine, false) },
-            { DeleteExpressionPositions.Where, (true, Sql.Clauses.Where, Constants.Strings.Comma + Sql.LogicOperators.And, false) },
+            { DeleteExpressionPositions.Where, (true, Sql.Clauses.Where, Constants.Strings.Space + Sql.LogicOperators.And + Constants.Strings.Space, false) },
             { DeleteExpressionPositions.OrderBy, (true, Sql.Clauses.OrderBy, Constants.Strings.Comma, false) },
             { DeleteExpressionPositions.After, (true, null, Environment.NewLine, false) },
         };

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -52,9 +52,9 @@
   </ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Blazored.LocalStorage" Version="4.4.0" />
-	  <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.6.0" />
-	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.6.0" />
+	  <PackageReference Include="Blazored.LocalStorage" />
+	  <PackageReference Include="Microsoft.IdentityModel.Tokens" />
+	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
 	</ItemGroup>
 
   <ItemGroup>

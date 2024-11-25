@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
@@ -45,9 +45,9 @@
 	</Target>
 
 	<ItemGroup>
-		<PackageReference Include="Dapper" Version="2.1.35" />
-		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
-		<PackageReference Include="System.Threading.Tasks" Version="4.3.0" />
+		<PackageReference Include="Dapper" />
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
+		<PackageReference Include="System.Threading.Tasks" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\..\Sels.Core.Data.SQL\Sels.Core.Data.SQL.csproj" />

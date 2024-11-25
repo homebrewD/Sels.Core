@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
@@ -30,7 +30,7 @@
 		<DebugSymbols>false</DebugSymbols>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Dapper" Version="2.1.35" />
+		<PackageReference Include="Dapper" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Frameworks\Sql\Query\Sels.SQL.QueryBuilder\Sels.SQL.QueryBuilder.csproj" />

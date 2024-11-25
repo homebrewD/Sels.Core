@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -46,7 +46,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Sels.Core.Processing\Sels.Core.Processing.csproj" />
-	<PackageReference Include="NCrontab.Signed" Version="3.3.3" />
+	<PackageReference Include="NCrontab.Signed" />
   </ItemGroup>
 
 </Project>
